@@ -2,21 +2,24 @@
 'use strict'
 
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
-
+const path = require('path')
+const setImmediate = require('async/setImmediate')
+const each = require('async/each')
+const waterfall = require('async/series')
 const asyncFilter = require('interface-datastore').utils.asyncFilter
 const asyncSort = require('interface-datastore').utils.asyncSort
 const Key = require('interface-datastore').Key
 
-/* :: export type FsInputOptions = {
-  createIfMissing?: bool,
-  errorIfExists?: bool,
-  extension?: string
+const Deferred = require('pull-defer')
+
+/* :: export type S3DSInputOptions = {
+  s3: S3Instance
 }
 
-type FsOptions = {
-  createIfMissing: bool,
-  errorIfExists: bool,
-  extension: string
+declare type S3Instance = {
+  config: {
+    Bucket: ?string
+  }
 }
 */
 
@@ -28,77 +31,29 @@ type FsOptions = {
  */
 class S3Datastore {
   /* :: path: string */
-  /* :: opts: FsOptions */
+  /* :: opts: S3DSInputOptions */
 
-  constructor (location /* : string */, opts /* : ?FsInputOptions */) {
+  constructor (path /* : string */, opts /* : S3DSInputOptions */) {
+    this.path = path
+    this.opts = opts
 
-  }
+    try {
+      if (typeof this.opts.s3.config.params.Bucket !== 'string') {
+        throw new Error()
+      }
+    } catch (err) {
+      throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples')
+    }
 
-  open (callback /* : Callback<void> */) /* : void */ {
-
-  }
-
-  /**
-   * Check if the path actually exists.
-   * @private
-   * @returns {void}
-   */
-  _open () {
-
-  }
-
-  /**
-   * Create the directory to hold our data.
-   *
-   * @private
-   * @returns {void}
-   */
-  _create () {
-
+    this.bucket = this.opts.s3.config.params.Bucket
   }
 
   /**
-   * Tries to open, and creates if the open fails.
-   *
-   * @private
-   * @returns {void}
+   * Returns the full key which includes the path to the ipfs store
+   * @param {Key} key 
    */
-  _openOrCreate () {
-
-  }
-
-  /**
-   * Calculate the directory and file name for a given key.
-   *
-   * @private
-   * @param {Key} key
-   * @returns {{string, string}}
-   */
-  _encode (key /* : Key */) /* : {dir: string, file: string} */ {
-
-  }
-
-  /**
-   * Calculate the original key, given the file name.
-   *
-   * @private
-   * @param {string} file
-   * @returns {Key}
-   */
-  _decode (file /* : string */) /* : Key */ {
-
-  }
-
-  /**
-   * Write to the file system without extension.
-   *
-   * @param {Key} key
-   * @param {Buffer} val
-   * @param {function(Error)} callback
-   * @returns {void}
-   */
-  putRaw (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
-
+  _getFullKey (key /* : Key */) {
+    return path.join(this.path, key.toString())
   }
 
   /**
@@ -110,29 +65,32 @@ class S3Datastore {
    * @returns {void}
    */
   put (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
-
+    this.opts.s3.upload({
+      Key: this._getFullKey(key),
+      Body: val
+    }, (err, data) => {
+      callback(err)
+    })
   }
 
   /**
-   * Read from the file system without extension.
-   *
-   * @param {Key} key
-   * @param {function(Error, Buffer)} callback
-   * @returns {void}
-   */
-  getRaw (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
-
-  }
-
-  /**
-   * Read from the file system.
+   * Read from s3.
    *
    * @param {Key} key
    * @param {function(Error, Buffer)} callback
    * @returns {void}
    */
   get (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
+    this.opts.s3.getObject({
+      Key: this._getFullKey(key)
+    }, (err, data) => {
+      if (err) {
+        callback(err, null)
+        return
+      }
 
+      callback(null, data.Body || null)
+    })
   }
 
   /**
@@ -143,7 +101,19 @@ class S3Datastore {
    * @returns {void}
    */
   has (key /* : Key */, callback /* : Callback<bool> */) /* : void */ {
-
+    this.opts.s3.headObject({
+      Key: this._getFullKey(key)
+    }, (err, data) => {
+      if (err && err.code === 'NotFound') {
+        callback(null, false)
+        return
+      } else if (err) {
+        callback(err, false)
+        return
+      }
+      
+      callback(null, true)
+    })
   }
 
   /**
@@ -154,7 +124,11 @@ class S3Datastore {
    * @returns {void}
    */
   delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
-
+    this.opts.s3.deleteObject({
+      Key: this._getFullKey(key)
+    }, (err, data) => {
+      callback(err)
+    })
   }
 
   /**
@@ -163,7 +137,26 @@ class S3Datastore {
    * @returns {Batch}
    */
   batch () /* : Batch<Buffer> */ {
-   
+    let puts = []
+    let deletes = []
+    return {
+      put (key /* : Key */, value /* : Buffer */) /* : void */ {
+        puts.push({ key: key, value: value })
+      },
+      delete (key /* : Key */) /* : void */ {
+        deletes.push(key)
+      },
+      commit: (callback /* : (err: ?Error) => void */) => {
+        waterfall([
+          (cb) => each(puts, (p, _cb) => {
+            this.put(p.key, p.value, _cb)
+          }, cb),
+          (cb) => each(deletes, (key, _cb) => {
+            this.delete(key, _cb)
+          }, cb),
+        ], (err) => callback(err))
+      }
+    }
   }
 
   /**
@@ -173,7 +166,48 @@ class S3Datastore {
    * @returns {PullStream}
    */
   query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
+
+    let deferred = Deferred.source()
+    let prefix = q.prefix
+    let limit = q.limit || null
+    let offset = q.offset || 0
+    let filters = q.filters || []
+    let orders = q.orders || []
+    let keysOnly = q.keysOnly || false
     
+    // List the objects from s3, with: prefix, limit, offset    
+
+    // If !keyOnly get each object from s3
+
+    // Filter the objects
+
+    // Order the objects
+
+
+
+    /*
+    - `prefix: string` (optional) - only return values where the key starts with this prefix
+    - `filters: Array<Filter<Value>>` (optional) - filter the results according to the these functions
+    - `orders: Array<Order<Value>>` (optional) - order the results according to these functions
+    - `limit: number` (optional) - only return this many records
+    - `offset: number` (optional) - skip this many records at the beginning
+    - `keysOnly: bool` (optional) - Only return keys, no values.
+    */
+
+   // I'll need to return a https://pull-stream.github.io/#pull-defer, since the query to s3 is async
+    throw new Error('TODO')
+    return deferred
+  }
+
+   /**
+   * This will check the s3 bucket to ensure permissions are set
+   * 
+   * @param {function(Error)} callback 
+   */
+  open (callback /* : Callback<void> */) /* : void */ {
+    this.opts.s3.headBucket({
+      Bucket: this.bucket
+    }, callback)
   }
 
   /**
@@ -183,7 +217,7 @@ class S3Datastore {
    * @returns {void}
    */
   close (callback /* : (err: ?Error) => void */) /* : void */ {
-
+    setImmediate(callback)
   }
 }
 
