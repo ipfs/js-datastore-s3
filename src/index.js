@@ -64,7 +64,8 @@ class S3Datastore {
    * @returns {String}
    */
   _getFullKey (key /* : Key */) {
-    return path.join(this.path, key.toString())
+    // Avoid absolute paths with s3
+    return path.join('.', this.path, key.toString())
   }
 
   /**
@@ -95,8 +96,11 @@ class S3Datastore {
     this.opts.s3.getObject({
       Key: this._getFullKey(key)
     }, (err, data) => {
-      if (err) {
-        return callback(err, null)
+      if (err && err.statusCode === 404) {
+        // TODO: Cleanup across repos https://github.com/ipfs/js-ipfs/blob/master/src/core/boot.js#L43
+        return callback(new Error('not found'))
+      } else if (err) {
+        return callback(err)
       }
 
       // If a body was returned, ensure it's a Buffer
@@ -183,7 +187,7 @@ class S3Datastore {
 
     this.opts.s3.listObjectsV2(params, (err, data) => {
       if (err) {
-        return callback(err)
+        return callback(new Error(err.code))
       }
 
       data.Contents.forEach((d) => {
@@ -320,9 +324,15 @@ class S3Datastore {
    * @returns {void}
    */
   open (callback /* : Callback<void> */) /* : void */ {
-    this.opts.s3.headBucket({
-      Bucket: this.bucket
-    }, callback)
+    this.opts.s3.headObject({
+      Key: this.path
+    }, (err, data) => {
+      if (err && err.statusCode === 404) {
+        return this.put(new Key('/', false), Buffer.from(''), callback)
+      }
+
+      callback(err)
+    })
   }
 
   /**

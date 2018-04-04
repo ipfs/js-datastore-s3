@@ -6,9 +6,10 @@ const expect = chai.expect
 const standin = require('stand-in')
 
 class S3Error extends Error {
-  constructor (code) {
-    super(code)
-    this.code = code
+  constructor (message, code) {
+    super(message)
+    this.code = message
+    this.statusCode = code
   }
 }
 
@@ -27,7 +28,7 @@ module.exports = function (s3) {
       delete storage[params.Key]
       callback(null, {})
     } else {
-      callback(new S3Error('NotFound'), null)
+      callback(new S3Error('NotFound', 404), null)
     }
   })
 
@@ -36,7 +37,7 @@ module.exports = function (s3) {
     if (storage[params.Key]) {
       callback(null, { Body: storage[params.Key] })
     } else {
-      callback(new S3Error('NotFound'), null)
+      callback(new S3Error('NotFound', 404), null)
     }
   })
 
@@ -50,7 +51,7 @@ module.exports = function (s3) {
     if (storage[params.Key]) {
       callback(null, {})
     } else {
-      callback(new S3Error('NotFound'), null)
+      callback(new S3Error('NotFound', 404), null)
     }
   })
 
