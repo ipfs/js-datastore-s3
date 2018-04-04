@@ -30,12 +30,15 @@ A bucket must be created prior to using datastore-s3. Please see the AWS docs fo
 
 ```js
 const S3 = require('aws-sdk').S3
-const s3Instance = new S3({ params: { Bucket: 'my-ipfs-bucket' } }) 
+const s3Instance = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
 const S3Store = require('datastore-s3')
-const store = new S3Store('.ipfs/datastore', { 
-  s3: s3Instance 
-})     
+const store = new S3Store('.ipfs/datastore', {
+  s3: s3Instance
+})
 ```
+
+### Examples
+You can see examples of S3 backed ipfs in the [examples folder](examples/)
 
 ## Contribute
 
