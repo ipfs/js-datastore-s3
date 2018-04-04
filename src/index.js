@@ -20,8 +20,16 @@ const pull = require('pull-stream')
 
 declare type S3Instance = {
   config: {
-    Bucket: ?string
-  }
+    params: {
+      Bucket: ?string
+    }    
+  },
+  deleteObject: any,
+  getObject: any,
+  headBucket: any,
+  headObject: any,
+  listObjectsV2: any,
+  upload: any
 }
 */
 
@@ -34,6 +42,7 @@ declare type S3Instance = {
 class S3Datastore {
   /* :: path: string */
   /* :: opts: S3DSInputOptions */
+  /* :: bucket: string */
 
   constructor (path /* : string */, opts /* : S3DSInputOptions */) {
     this.path = path
@@ -162,10 +171,10 @@ class S3Datastore {
   /**
    * Recursively fetches all keys from s3
    */
-  _listKeys (params, keys, callback) {
+  _listKeys (params /* : { Prefix: string, StartAfter: ?string } */, keys /* : Array<Key> */, callback /* : Callback<void> */) {
     if (typeof callback === 'undefined') {
       callback = keys
-      keys = []
+      keys = [] 
     }
 
     this.opts.s3.listObjectsV2(params, (err, data) => {
@@ -196,11 +205,11 @@ class S3Datastore {
    * @param {Array<Key>} keys
    * @param {Boolean} keysOnly Whether or not only keys should be returned
    */
-  _getS3Iterator (keys, keysOnly) {
+  _getS3Iterator (keys /* : Array<Key> */, keysOnly /* : boolean */) {
     let count = 0
 
     return {
-      next: (callback) => {
+      next: (callback/* : Callback<Error, Key, Buffer> */) => {
         // Check if we're done
         if (count >= keys.length) {
           return callback(null, null, null)
@@ -233,7 +242,7 @@ class S3Datastore {
     let deferred = Deferred.source()
     let iterator
 
-    const params = {
+    const params /* : Object */ = {
       Prefix: prefix 
     }   
     
@@ -253,7 +262,7 @@ class S3Datastore {
           return callback(true)
         }
 
-        const res = {
+        const res /* : Object */ = {
           key: key
         }
 
@@ -266,9 +275,9 @@ class S3Datastore {
     }
 
     // Get all the keys via list object, recursively as needed
-    this._listKeys(params, (err, keys) => {
+    this._listKeys(params, [], (err, keys) => {
       if (err) {
-        return callback(err)
+        return deferred.abort(err)
       }
 
       iterator = this._getS3Iterator(keys, q.keysOnly || false)
