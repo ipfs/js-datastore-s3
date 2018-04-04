@@ -49,6 +49,23 @@ module.exports = class S3Mock {
         callback({ code: 'NotFound' }, null)  
       }      
     })
+
+    this.mocks['listObjectsV2'] = standin.replace(s3, 'listObjectsV2', (stand, params, callback) => {
+      expect(params.Prefix).to.be.a('string')
+      const results = {
+        Contents: []
+      }
+
+      for (let k in this.storage) {
+        if (k.startsWith(params.Prefix)) {
+          results.Contents.push({
+            Key: k
+          })
+        }
+      }
+      
+      callback(null, results)
+    })
     
     this.mocks['upload'] = standin.replace(s3, 'upload', (stand, params, callback) => {
       expect(params.Key).to.be.a('string')

@@ -5,12 +5,14 @@
 const path = require('path')
 const setImmediate = require('async/setImmediate')
 const each = require('async/each')
+const eachLimit = require('async/eachLimit')
 const waterfall = require('async/series')
 const asyncFilter = require('interface-datastore').utils.asyncFilter
 const asyncSort = require('interface-datastore').utils.asyncSort
 const Key = require('interface-datastore').Key
 
 const Deferred = require('pull-defer')
+const pull = require('pull-stream')
 
 /* :: export type S3DSInputOptions = {
   s3: S3Instance
@@ -85,11 +87,11 @@ class S3Datastore {
       Key: this._getFullKey(key)
     }, (err, data) => {
       if (err) {
-        callback(err, null)
-        return
+        return callback(err, null)
       }
-
-      callback(null, data.Body || null)
+      
+      // If a body was returned, ensure it's a Buffer
+      callback(null, data.Body ? Buffer.from(data.Body) : null)
     })
   }
 
@@ -105,11 +107,9 @@ class S3Datastore {
       Key: this._getFullKey(key)
     }, (err, data) => {
       if (err && err.code === 'NotFound') {
-        callback(null, false)
-        return
+        return callback(null, false)
       } else if (err) {
-        callback(err, false)
-        return
+        return callback(err, false)
       }
       
       callback(null, true)
@@ -160,47 +160,148 @@ class S3Datastore {
   }
 
   /**
+   * Recursively fetches all keys from s3
+   */
+  _listKeys (params, keys, callback) {
+    if (typeof callback === 'undefined') {
+      callback = keys
+      keys = []
+    }
+
+    this.opts.s3.listObjectsV2(params, (err, data) => {
+      if (err) {
+        return callback(err)
+      }
+
+      data.Contents.forEach((d) => {
+        // Remove the path from the key
+        keys.push(new Key(d.Key.slice(this.path.length), false))
+      })
+
+      // If we didnt get all records, recursively query
+      if (data.isTruncated) {        
+        // If NextMarker is absent, use the key from the last result
+        params.StartAfter = data.Contents[data.Contents.length - 1].Key
+        
+        // recursively fetch keys
+        return this._listKeys(params, keys, callback)        
+      }
+
+      callback(err, keys)
+    })
+  }
+
+  /**
+   * Returns an iterator for fetching objects from s3 by their key
+   * @param {Array<Key>} keys
+   * @param {Boolean} keysOnly Whether or not only keys should be returned
+   */
+  _getS3Iterator (keys, keysOnly) {
+    let count = 0
+
+    return {
+      next: (callback) => {
+        // Check if we're done
+        if (count >= keys.length) {
+          return callback(null, null, null)
+        }
+
+        let currentKey = keys[count++]
+
+        if (keysOnly) {
+          return callback(null, currentKey, null)
+        }
+
+        // Fetch the object Buffer from s3
+        this.get(currentKey, (err, data) => {
+          callback(err, currentKey, data)
+        })
+      }
+    }  
+  }
+
+  /**
    * Query the store.
    *
    * @param {Object} q
    * @returns {PullStream}
    */
   query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
-
-    let deferred = Deferred.source()
-    let prefix = q.prefix
-    let limit = q.limit || null
-    let offset = q.offset || 0
-    let filters = q.filters || []
-    let orders = q.orders || []
-    let keysOnly = q.keysOnly || false
     
-    // List the objects from s3, with: prefix, limit, offset    
+    const prefix = path.join(this.path, q.prefix || '')
+    
+    let deferred = Deferred.source()
+    let iterator
 
-    // If !keyOnly get each object from s3
+    const params = {
+      Prefix: prefix 
+    }   
+    
+    // this gets called recursively, the internals need to iterate
+    const rawStream = (end, callback) => {
+      if (end) {
+        return callback(end)
+      }      
 
-    // Filter the objects
+      iterator.next((err, key, value) => {
+        if (err) {
+          return callback(err)
+        } 
 
-    // Order the objects
+        // If the iterator is done, declare the stream done
+        if (err === null && key === null && value === null) {
+          return callback(true)
+        }
 
+        const res = {
+          key: key
+        }
 
+        if (value) {
+          res.value = value
+        }
 
-    /*
-    - `prefix: string` (optional) - only return values where the key starts with this prefix
-    - `filters: Array<Filter<Value>>` (optional) - filter the results according to the these functions
-    - `orders: Array<Order<Value>>` (optional) - order the results according to these functions
-    - `limit: number` (optional) - only return this many records
-    - `offset: number` (optional) - skip this many records at the beginning
-    - `keysOnly: bool` (optional) - Only return keys, no values.
-    */
+        callback(null, res)
+      })
+    }
 
-   // I'll need to return a https://pull-stream.github.io/#pull-defer, since the query to s3 is async
-    throw new Error('TODO')
-    return deferred
+    // Get all the keys via list object, recursively as needed
+    this._listKeys(params, (err, keys) => {
+      if (err) {
+        return callback(err)
+      }
+
+      iterator = this._getS3Iterator(keys, q.keysOnly || false)
+
+      deferred.resolve(rawStream)
+    })
+
+    // Use a deferred pull stream source, as async operations need to occur before the 
+    // pull stream begins
+    let tasks = [deferred]
+
+    if (q.filters != null) {
+      tasks = tasks.concat(q.filters.map(f => asyncFilter(f)))
+    }
+
+    if (q.orders != null) {
+      tasks = tasks.concat(q.orders.map(o => asyncSort(o)))
+    }
+
+    if (q.offset != null) {
+      let i = 0
+      tasks.push(pull.filter(() => i++ >= q.offset))
+    }
+
+    if (q.limit != null) {
+      tasks.push(pull.take(q.limit))
+    }
+
+    return pull.apply(null, tasks)
   }
 
    /**
-   * This will check the s3 bucket to ensure permissions are set
+   * This will check the s3 bucket to ensure access and existence
    * 
    * @param {function(Error)} callback 
    */
