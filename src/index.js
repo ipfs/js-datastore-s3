@@ -5,7 +5,6 @@
 const path = require('path')
 const setImmediate = require('async/setImmediate')
 const each = require('async/each')
-const eachLimit = require('async/eachLimit')
 const waterfall = require('async/series')
 const asyncFilter = require('interface-datastore').utils.asyncFilter
 const asyncSort = require('interface-datastore').utils.asyncSort
@@ -22,7 +21,7 @@ declare type S3Instance = {
   config: {
     params: {
       Bucket: ?string
-    }    
+    }
   },
   deleteObject: any,
   getObject: any,
@@ -61,7 +60,8 @@ class S3Datastore {
 
   /**
    * Returns the full key which includes the path to the ipfs store
-   * @param {Key} key 
+   * @param {Key} key
+   * @returns {String}
    */
   _getFullKey (key /* : Key */) {
     return path.join(this.path, key.toString())
@@ -98,7 +98,7 @@ class S3Datastore {
       if (err) {
         return callback(err, null)
       }
-      
+
       // If a body was returned, ensure it's a Buffer
       callback(null, data.Body ? Buffer.from(data.Body) : null)
     })
@@ -120,7 +120,7 @@ class S3Datastore {
       } else if (err) {
         return callback(err, false)
       }
-      
+
       callback(null, true)
     })
   }
@@ -162,7 +162,7 @@ class S3Datastore {
           }, cb),
           (cb) => each(deletes, (key, _cb) => {
             this.delete(key, _cb)
-          }, cb),
+          }, cb)
         ], (err) => callback(err))
       }
     }
@@ -170,11 +170,15 @@ class S3Datastore {
 
   /**
    * Recursively fetches all keys from s3
+   * @param {Object} params
+   * @param {Array<Key>} keys
+   * @param {function} callback
+   * @returns {void}
    */
   _listKeys (params /* : { Prefix: string, StartAfter: ?string } */, keys /* : Array<Key> */, callback /* : Callback<void> */) {
     if (typeof callback === 'undefined') {
       callback = keys
-      keys = [] 
+      keys = []
     }
 
     this.opts.s3.listObjectsV2(params, (err, data) => {
@@ -188,12 +192,12 @@ class S3Datastore {
       })
 
       // If we didnt get all records, recursively query
-      if (data.isTruncated) {        
+      if (data.isTruncated) {
         // If NextMarker is absent, use the key from the last result
         params.StartAfter = data.Contents[data.Contents.length - 1].Key
-        
+
         // recursively fetch keys
-        return this._listKeys(params, keys, callback)        
+        return this._listKeys(params, keys, callback)
       }
 
       callback(err, keys)
@@ -204,6 +208,7 @@ class S3Datastore {
    * Returns an iterator for fetching objects from s3 by their key
    * @param {Array<Key>} keys
    * @param {Boolean} keysOnly Whether or not only keys should be returned
+   * @returns {Iterator}
    */
   _getS3Iterator (keys /* : Array<Key> */, keysOnly /* : boolean */) {
     let count = 0
@@ -226,7 +231,7 @@ class S3Datastore {
           callback(err, currentKey, data)
         })
       }
-    }  
+    }
   }
 
   /**
@@ -236,30 +241,29 @@ class S3Datastore {
    * @returns {PullStream}
    */
   query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
-    
     const prefix = path.join(this.path, q.prefix || '')
-    
+
     let deferred = Deferred.source()
     let iterator
 
     const params /* : Object */ = {
-      Prefix: prefix 
-    }   
-    
+      Prefix: prefix
+    }
+
     // this gets called recursively, the internals need to iterate
     const rawStream = (end, callback) => {
       if (end) {
         return callback(end)
-      }      
+      }
 
       iterator.next((err, key, value) => {
         if (err) {
           return callback(err)
-        } 
+        }
 
         // If the iterator is done, declare the stream done
         if (err === null && key === null && value === null) {
-          return callback(true)
+          return callback(true) // eslint-disable-line standard/no-callback-literal
         }
 
         const res /* : Object */ = {
@@ -285,7 +289,7 @@ class S3Datastore {
       deferred.resolve(rawStream)
     })
 
-    // Use a deferred pull stream source, as async operations need to occur before the 
+    // Use a deferred pull stream source, as async operations need to occur before the
     // pull stream begins
     let tasks = [deferred]
 
@@ -309,10 +313,11 @@ class S3Datastore {
     return pull.apply(null, tasks)
   }
 
-   /**
+  /**
    * This will check the s3 bucket to ensure access and existence
-   * 
-   * @param {function(Error)} callback 
+   *
+   * @param {function(Error)} callback
+   * @returns {void}
    */
   open (callback /* : Callback<void> */) /* : void */ {
     this.opts.s3.headBucket({

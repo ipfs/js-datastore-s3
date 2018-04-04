@@ -5,73 +5,76 @@ chai.use(require('dirty-chai'))
 const expect = chai.expect
 const standin = require('stand-in')
 
+class S3Error extends Error {
+  constructor (code) {
+    super(code)
+    this.code = code
+  }
+}
+
 /**
  * Mocks out the s3 calls made by datastore-s3
+ * @param {S3Instance} s3
+ * @returns {void}
  */
-module.exports = class S3Mock {
-  constructor(s3) {
-    this.s3 = s3
-    this.mocks = {}
-    this.storage = {}
-    this.mock(s3)
-  }
+module.exports = function (s3) {
+  const mocks = {}
+  const storage = {}
 
-  mock(s3) {
-    this.mocks['deleteObject'] = standin.replace(s3, 'deleteObject', (stand, params, callback) => {
-      expect(params.Key).to.be.a('string')
-      if (this.storage[params.Key]) {
-        delete this.storage[params.Key] 
-        callback(null, {})  
-      } else {
-        callback({ code: 'NotFound' }, null)  
-      }      
-    })
+  mocks.deleteObject = standin.replace(s3, 'deleteObject', (stand, params, callback) => {
+    expect(params.Key).to.be.a('string')
+    if (storage[params.Key]) {
+      delete storage[params.Key]
+      callback(null, {})
+    } else {
+      callback(new S3Error('NotFound'), null)
+    }
+  })
 
-    this.mocks['getObject'] = standin.replace(s3, 'getObject', (stand, params, callback) => {
-      expect(params.Key).to.be.a('string')
-      if (this.storage[params.Key]) {
-        callback(null, { Body: this.storage[params.Key] })  
-      } else {
-        callback({ code: 'NotFound' }, null)  
-      }      
-    })
+  mocks.getObject = standin.replace(s3, 'getObject', (stand, params, callback) => {
+    expect(params.Key).to.be.a('string')
+    if (storage[params.Key]) {
+      callback(null, { Body: storage[params.Key] })
+    } else {
+      callback(new S3Error('NotFound'), null)
+    }
+  })
 
-    this.mocks['headBucket'] = standin.replace(s3, 'headBucket', (stand, params, callback) => {
-      expect(params.Bucket).to.be.a('string')
-      callback(null)
-    })
+  mocks.headBucket = standin.replace(s3, 'headBucket', (stand, params, callback) => {
+    expect(params.Bucket).to.be.a('string')
+    callback(null)
+  })
 
-    this.mocks['headObject'] = standin.replace(s3, 'headObject', (stand, params, callback) => {
-      expect(params.Key).to.be.a('string')
-      if (this.storage[params.Key]) {
-        callback(null, {})  
-      } else {
-        callback({ code: 'NotFound' }, null)  
-      }      
-    })
+  mocks.headObject = standin.replace(s3, 'headObject', (stand, params, callback) => {
+    expect(params.Key).to.be.a('string')
+    if (storage[params.Key]) {
+      callback(null, {})
+    } else {
+      callback(new S3Error('NotFound'), null)
+    }
+  })
 
-    this.mocks['listObjectsV2'] = standin.replace(s3, 'listObjectsV2', (stand, params, callback) => {
-      expect(params.Prefix).to.be.a('string')
-      const results = {
-        Contents: []
+  mocks.listObjectV2 = standin.replace(s3, 'listObjectsV2', (stand, params, callback) => {
+    expect(params.Prefix).to.be.a('string')
+    const results = {
+      Contents: []
+    }
+
+    for (let k in storage) {
+      if (k.startsWith(params.Prefix)) {
+        results.Contents.push({
+          Key: k
+        })
       }
+    }
 
-      for (let k in this.storage) {
-        if (k.startsWith(params.Prefix)) {
-          results.Contents.push({
-            Key: k
-          })
-        }
-      }
-      
-      callback(null, results)
-    })
-    
-    this.mocks['upload'] = standin.replace(s3, 'upload', (stand, params, callback) => {
-      expect(params.Key).to.be.a('string')
-      expect(params.Body).to.be.instanceof(Buffer)
-      this.storage[params.Key] = params.Body
-      callback(null)
-    })    
-  }
+    callback(null, results)
+  })
+
+  mocks.upload = standin.replace(s3, 'upload', (stand, params, callback) => {
+    expect(params.Key).to.be.a('string')
+    expect(params.Body).to.be.instanceof(Buffer)
+    storage[params.Key] = params.Body
+    callback(null)
+  })
 }
