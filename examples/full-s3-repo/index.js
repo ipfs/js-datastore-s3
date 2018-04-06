@@ -27,7 +27,8 @@ const repo = new Repo('/tmp/test/.ipfs', {
     blocks: { s3 },
     keys: { s3 },
     datastore: { s3 }
-  }
+  },
+  lock: 'memory'
 })
 
 let node = new IPFS({
