@@ -2,6 +2,7 @@
 'use strict'
 
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
+const assert = require('assert')
 const path = require('path')
 const setImmediate = require('async/setImmediate')
 const each = require('async/each')
@@ -46,16 +47,21 @@ class S3Datastore {
   constructor (path /* : string */, opts /* : S3DSInputOptions */) {
     this.path = path
     this.opts = opts
+    const {
+      createIfMissing = false,
+      s3: {
+        config: {
+          params: {
+            Bucket
+          } = {}
+        } = {}
+      } = {}
+    } = opts
 
-    try {
-      if (typeof this.opts.s3.config.params.Bucket !== 'string') {
-        throw new Error()
-      }
-    } catch (err) {
-      throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples')
-    }
-
-    this.bucket = this.opts.s3.config.params.Bucket
+    assert(typeof Bucket === 'string', 'An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
+    assert(typeof createIfMissing === 'boolean', `createIfMissing must be a boolean but was (${typeof createIfMissing}) ${createIfMissing}`)
+    this.bucket = Bucket
+    this.createIfMissing = createIfMissing
   }
 
   /**
@@ -81,7 +87,7 @@ class S3Datastore {
       Key: this._getFullKey(key),
       Body: val
     }, (err, data) => {
-      if (err && err.code === 'NoSuchBucket') {
+      if (err && err.code === 'NoSuchBucket' && this.createIfMissing) {
         this.opts.s3.createBucket({}, (err) => {
           if (err) return callback(err)
           setImmediate(() => this.put(key, val, callback))
