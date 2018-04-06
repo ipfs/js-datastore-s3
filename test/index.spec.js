@@ -22,6 +22,16 @@ describe('S3Datastore', () => {
         () => new S3Store('.ipfs/datastore', { s3 })
       ).to.throw()
     })
+    it('createIfMissing defaults to false', () => {
+      const s3 = new S3({ params: { Bucket: 'test' } })
+      const store = new S3Store('.ipfs', { s3 })
+      expect(store.createIfMissing).to.equal(false)
+    })
+    it('createIfMissing can be set to true', () => {
+      const s3 = new S3({ params: { Bucket: 'test' } })
+      const store = new S3Store('.ipfs', { s3, createIfMissing: true })
+      expect(store.createIfMissing).to.equal(true)
+    })
   })
 
   describe('put', () => {
@@ -36,6 +46,54 @@ describe('S3Datastore', () => {
       })
 
       store.put(new Key('/z/key'), Buffer.from('test data'), done)
+    })
+    it('should create the bucket when missing if createIfMissing is true', (done) => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: true })
+
+      // 1. On the first call upload will fail with a NoSuchBucket error
+      // 2. This should result in the `createBucket` standin being called
+      // 3. upload is then called a second time and it passes
+
+      let bucketCreated = false
+      standin.replace(s3, 'upload', (stand, params, callback) => {
+        if (!bucketCreated) return callback({ code: 'NoSuchBucket' })
+        stand.restore()
+        return callback(null)
+      })
+
+      standin.replace(s3, 'createBucket', (stand, params, callback) => {
+        bucketCreated = true
+        stand.restore()
+        return callback()
+      })
+
+      store.put(new Key('/z/key'), Buffer.from('test data'), done)
+    })
+    it('should create the bucket when missing if createIfMissing is true', (done) => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: false })
+
+      let bucketCreated = false
+      standin.replace(s3, 'upload', (stand, params, callback) => {
+        if (!bucketCreated) return callback({ code: 'NoSuchBucket' })
+        stand.restore()
+        return callback(null)
+      })
+
+      standin.replace(s3, 'createBucket', (stand, params, callback) => {
+        bucketCreated = true
+        stand.restore()
+        return callback()
+      })
+
+      store.put(new Key('/z/key'), Buffer.from('test data'), (err) => {
+        expect(bucketCreated).to.equal(false)
+        expect(err).to.deep.equal({
+          code: 'NoSuchBucket'
+        })
+        done()
+      })
     })
   })
 
