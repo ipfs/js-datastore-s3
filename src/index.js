@@ -81,7 +81,14 @@ class S3Datastore {
       Key: this._getFullKey(key),
       Body: val
     }, (err, data) => {
-      callback(err)
+      if (err && err.code === 'NoSuchBucket') {
+        this.opts.s3.createBucket({}, (err) => {
+          if (err) return callback(err)
+          setImmediate(() => this.put(key, val, callback))
+        })
+      } else {
+        callback(err)
+      }
     })
   }
 
