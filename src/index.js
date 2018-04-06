@@ -15,7 +15,8 @@ const Deferred = require('pull-defer')
 const pull = require('pull-stream')
 
 /* :: export type S3DSInputOptions = {
-  s3: S3Instance
+  s3: S3Instance,
+  createIfMissing: ?boolean
 }
 
 declare type S3Instance = {
@@ -43,6 +44,7 @@ class S3Datastore {
   /* :: path: string */
   /* :: opts: S3DSInputOptions */
   /* :: bucket: string */
+  /* :: createIfMissing: boolean */
 
   constructor (path /* : string */, opts /* : S3DSInputOptions */) {
     this.path = path
