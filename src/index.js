@@ -2,6 +2,7 @@
 'use strict'
 
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
+const assert = require('assert')
 const path = require('path')
 const setImmediate = require('async/setImmediate')
 const each = require('async/each')
@@ -14,7 +15,8 @@ const Deferred = require('pull-defer')
 const pull = require('pull-stream')
 
 /* :: export type S3DSInputOptions = {
-  s3: S3Instance
+  s3: S3Instance,
+  createIfMissing: ?boolean
 }
 
 declare type S3Instance = {
@@ -42,20 +44,26 @@ class S3Datastore {
   /* :: path: string */
   /* :: opts: S3DSInputOptions */
   /* :: bucket: string */
+  /* :: createIfMissing: boolean */
 
   constructor (path /* : string */, opts /* : S3DSInputOptions */) {
     this.path = path
     this.opts = opts
+    const {
+      createIfMissing = false,
+      s3: {
+        config: {
+          params: {
+            Bucket
+          } = {}
+        } = {}
+      } = {}
+    } = opts
 
-    try {
-      if (typeof this.opts.s3.config.params.Bucket !== 'string') {
-        throw new Error()
-      }
-    } catch (err) {
-      throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples')
-    }
-
-    this.bucket = this.opts.s3.config.params.Bucket
+    assert(typeof Bucket === 'string', 'An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
+    assert(typeof createIfMissing === 'boolean', `createIfMissing must be a boolean but was (${typeof createIfMissing}) ${createIfMissing}`)
+    this.bucket = Bucket
+    this.createIfMissing = createIfMissing
   }
 
   /**
@@ -81,7 +89,14 @@ class S3Datastore {
       Key: this._getFullKey(key),
       Body: val
     }, (err, data) => {
-      callback(err)
+      if (err && err.code === 'NoSuchBucket' && this.createIfMissing) {
+        this.opts.s3.createBucket({}, (err) => {
+          if (err) return callback(err)
+          setImmediate(() => this.put(key, val, callback))
+        })
+      } else {
+        callback(err)
+      }
     })
   }
 
