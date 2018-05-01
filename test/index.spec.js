@@ -57,7 +57,10 @@ describe('S3Datastore', () => {
 
       let bucketCreated = false
       standin.replace(s3, 'upload', (stand, params, callback) => {
-        if (!bucketCreated) return callback({ code: 'NoSuchBucket' })
+        if (!bucketCreated) {
+          const err = { code: 'NoSuchBucket' }
+          return callback(err)
+        }
         stand.restore()
         return callback(null)
       })
@@ -76,7 +79,10 @@ describe('S3Datastore', () => {
 
       let bucketCreated = false
       standin.replace(s3, 'upload', (stand, params, callback) => {
-        if (!bucketCreated) return callback({ code: 'NoSuchBucket' })
+        if (!bucketCreated) {
+          const err = { code: 'NoSuchBucket' }
+          return callback(err)
+        }
         stand.restore()
         return callback(null)
       })
