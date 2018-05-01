@@ -37,7 +37,8 @@
     "datastore-core": "^0.4.0",
     "interface-datastore": "^0.4.2",
     "pull-defer": "^0.2.2",
-    "pull-stream": "^3.6.7"
+    "pull-stream": "^3.6.7",
+    "upath": "^1.0.5"
   },
   "devDependencies": {
     "aegir": "^13.0.6",
