@@ -3,7 +3,7 @@
 
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
 const assert = require('assert')
-const path = require('path')
+const path = require('upath')
 const setImmediate = require('async/setImmediate')
 const each = require('async/each')
 const waterfall = require('async/series')
