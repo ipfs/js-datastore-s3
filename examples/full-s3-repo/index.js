@@ -1,6 +1,5 @@
 'use strict'
 
-const series = require('async/series')
 const IPFS = require('ipfs')
 const Repo = require('ipfs-repo')
 const S3 = require('aws-sdk').S3
