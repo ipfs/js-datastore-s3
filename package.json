@@ -2,6 +2,7 @@
   "name": "datastore-s3",
   "version": "0.1.0",
   "description": "Datastore implementation backed by s3",
+  "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
   "scripts": {
     "lint": "aegir lint",
@@ -26,7 +27,6 @@
     "datastore",
     "s3"
   ],
-  "author": "Jacob Heun<jacobheun@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ipfs/js-datastore-s3/issues"

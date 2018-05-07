@@ -12,6 +12,9 @@
 
 > Datastore implementation backed by s3.
 
+## Lead Maintainer
+[Jacob Heun](https://github.com/jacobheun)
+
 ## Table of Contents
 
 - [Install](#install)
