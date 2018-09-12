@@ -3,7 +3,7 @@
 const IPFS = require('ipfs')
 const Repo = require('ipfs-repo')
 const S3 = require('aws-sdk').S3
-const S3Store = require('../../src')
+const S3Store = require('datastore-s3')
 const S3Lock = require('./s3-lock')
 
 // Initialize the AWS S3 instance
@@ -38,8 +38,14 @@ const repo = new Repo('/tmp/test/.ipfs', {
 
 // Create a new IPFS node with our S3 backed Repo
 let node = new IPFS({
-  repo
+  repo,
+  config: {
+    Discovery: { MDNS: { Enabled: false }, webRTCStar: { Enabled: false } },
+    Bootstrap: []
+  }
 })
+
+console.log('Start the node')
 
 // Test out the repo by sending and fetching some data
 node.on('ready', () => {
@@ -51,8 +57,8 @@ node.on('ready', () => {
     // Once we have the version, let's add a file to IPFS
     .then(() => {
       return node.files.add({
-        path: 'hello.txt',
-        content: Buffer.from('Hello World 101')
+        path: 'data.txt',
+        content: Buffer.from(require('crypto').randomBytes(1024 * 25))
       })
     })
     // Log out the added files metadata and cat the file from IPFS
@@ -62,8 +68,7 @@ node.on('ready', () => {
     })
     // Print out the files contents to console
     .then((data) => {
-      console.log('\nFetched file content:')
-      process.stdout.write(data)
+      console.log(`\nFetched file content containing ${data.byteLength} bytes`)
     })
     // Log out the error, if there is one
     .catch((err) => {
