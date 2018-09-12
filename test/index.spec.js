@@ -73,7 +73,7 @@ describe('S3Datastore', () => {
 
       store.put(new Key('/z/key'), Buffer.from('test data'), done)
     })
-    it('should create the bucket when missing if createIfMissing is true', (done) => {
+    it('should not create the bucket when missing if createIfMissing is false', (done) => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: false })
 
@@ -95,9 +95,7 @@ describe('S3Datastore', () => {
 
       store.put(new Key('/z/key'), Buffer.from('test data'), (err) => {
         expect(bucketCreated).to.equal(false)
-        expect(err).to.deep.equal({
-          code: 'NoSuchBucket'
-        })
+        expect(err).to.have.property('code', 'ERR_DB_WRITE_FAILED')
         done()
       })
     })
