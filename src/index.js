@@ -9,7 +9,10 @@ const each = require('async/each')
 const waterfall = require('async/series')
 const asyncFilter = require('interface-datastore').utils.asyncFilter
 const asyncSort = require('interface-datastore').utils.asyncSort
-const Key = require('interface-datastore').Key
+
+const IDatastore = require('interface-datastore')
+const Key = IDatastore.Key
+const Errors = IDatastore.Errors
 
 const Deferred = require('pull-defer')
 const pull = require('pull-stream')
@@ -90,13 +93,15 @@ class S3Datastore {
       Body: val
     }, (err, data) => {
       if (err && err.code === 'NoSuchBucket' && this.createIfMissing) {
-        this.opts.s3.createBucket({}, (err) => {
+        return this.opts.s3.createBucket({}, (err) => {
           if (err) return callback(err)
           setImmediate(() => this.put(key, val, callback))
         })
-      } else {
-        callback(err)
+      } else if (err) {
+        return callback(Errors.dbWriteFailedError(err))
       }
+
+      callback()
     })
   }
 
@@ -112,8 +117,7 @@ class S3Datastore {
       Key: this._getFullKey(key)
     }, (err, data) => {
       if (err && err.statusCode === 404) {
-        // TODO: Cleanup across repos https://github.com/ipfs/js-ipfs/blob/master/src/core/boot.js#L43
-        return callback(new Error('not found'))
+        return callback(Errors.notFoundError(err))
       } else if (err) {
         return callback(err)
       }
@@ -154,8 +158,11 @@ class S3Datastore {
   delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
     this.opts.s3.deleteObject({
       Key: this._getFullKey(key)
-    }, (err, data) => {
-      callback(err)
+    }, (err) => {
+      if (err) {
+        return callback(Errors.dbDeleteFailedError(err))
+      }
+      callback()
     })
   }
 
@@ -346,7 +353,10 @@ class S3Datastore {
         return this.put(new Key('/', false), Buffer.from(''), callback)
       }
 
-      callback(err)
+      if (err) {
+        return callback(Errors.dbOpenFailedError(err))
+      }
+      callback()
     })
   }
 

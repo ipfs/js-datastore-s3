@@ -73,7 +73,7 @@ describe('S3Datastore', () => {
 
       store.put(new Key('/z/key'), Buffer.from('test data'), done)
     })
-    it('should create the bucket when missing if createIfMissing is true', (done) => {
+    it('should not create the bucket when missing if createIfMissing is false', (done) => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: false })
 
@@ -95,9 +95,22 @@ describe('S3Datastore', () => {
 
       store.put(new Key('/z/key'), Buffer.from('test data'), (err) => {
         expect(bucketCreated).to.equal(false)
-        expect(err).to.deep.equal({
-          code: 'NoSuchBucket'
-        })
+        expect(err).to.have.property('code', 'ERR_DB_WRITE_FAILED')
+        done()
+      })
+    })
+    it('should return a standard error when the put fails', (done) => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3 })
+
+      standin.replace(s3, 'upload', function (stand, params, callback) {
+        expect(params.Key).to.equal('.ipfs/datastore/z/key')
+        stand.restore()
+        callback(new Error('bad things happened'))
+      })
+
+      store.put(new Key('/z/key'), Buffer.from('test data'), (err) => {
+        expect(err.code).to.equal('ERR_DB_WRITE_FAILED')
         done()
       })
     })
@@ -115,6 +128,58 @@ describe('S3Datastore', () => {
       })
 
       store.get(new Key('/z/key'), done)
+    })
+    it('should return a standard not found error code if the key isnt found', (done) => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3 })
+
+      standin.replace(s3, 'getObject', function (stand, params, callback) {
+        expect(params.Key).to.equal('.ipfs/datastore/z/key')
+        stand.restore()
+        let error = new Error('not found')
+        error.statusCode = 404
+        callback(error)
+      })
+
+      store.get(new Key('/z/key'), (err) => {
+        expect(err.code).to.equal('ERR_NOT_FOUND')
+        done()
+      })
+    })
+  })
+
+  describe('delete', () => {
+    it('should return a standard delete error if deletion fails', (done) => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3 })
+
+      standin.replace(s3, 'deleteObject', function (stand, params, callback) {
+        expect(params.Key).to.equal('.ipfs/datastore/z/key')
+        stand.restore()
+        callback(new Error('bad things'))
+      })
+
+      store.delete(new Key('/z/key'), (err) => {
+        expect(err.code).to.equal('ERR_DB_DELETE_FAILED')
+        done()
+      })
+    })
+  })
+
+  describe('open', () => {
+    it('should return a standard open error if the head request fails with an unknown error', (done) => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3 })
+
+      standin.replace(s3, 'headObject', function (stand, _, callback) {
+        stand.restore()
+        callback(new Error('unknown'))
+      })
+
+      store.open((err) => {
+        expect(err.code).to.equal('ERR_DB_OPEN_FAILED')
+        done()
+      })
     })
   })
 

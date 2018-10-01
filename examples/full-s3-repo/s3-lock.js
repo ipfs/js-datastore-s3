@@ -85,7 +85,7 @@ class S3Lock {
    */
   locked (dir, callback) {
     this.s3.get(this.getLockfilePath(dir), (err, data) => {
-      if (err && err.message.match(/not found/)) {
+      if (err && err.code === 'ERR_NOT_FOUND') {
         return callback(null, false)
       } else if (err) {
         return callback(err)

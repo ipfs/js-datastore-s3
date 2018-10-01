@@ -33,20 +33,20 @@
   },
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
-    "async": "^2.6.0",
-    "datastore-core": "^0.4.0",
-    "interface-datastore": "^0.4.2",
-    "pull-defer": "^0.2.2",
-    "pull-stream": "^3.6.7",
-    "upath": "^1.0.5"
+    "async": "^2.6.1",
+    "datastore-core": "~0.5.0",
+    "interface-datastore": "~0.5.0",
+    "pull-defer": "~0.2.3",
+    "pull-stream": "^3.6.9",
+    "upath": "^1.1.0"
   },
   "devDependencies": {
-    "aegir": "^13.0.6",
-    "aws-sdk": "^2.219.1",
+    "aegir": "^15.2.0",
+    "aws-sdk": "^2.316.0",
     "chai": "^4.1.2",
     "dirty-chai": "^2.0.1",
-    "flow-bin": "^0.69.0",
-    "flow-typed": "^2.4.0",
+    "flow-bin": "~0.81.0",
+    "flow-typed": "^2.5.1",
     "stand-in": "^4.2.0"
   },
   "contributors": [
