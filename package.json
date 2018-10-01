@@ -50,10 +50,7 @@
     "stand-in": "^4.2.0"
   },
   "contributors": [
-    "David Dias <daviddias.p@gmail.com>",
-    "Dmitriy Ryajov <dryajov@gmail.com>",
-    "Friedel Ziegelmayer <dignifiedquire@gmail.com>",
-    "Richard Schneider <makaretu@gmail.com>",
-    "Stephen Whitmore <noffle@users.noreply.github.com>"
+    "Jacob Heun <jacobheun@gmail.com>",
+    "Justin Chase <justin.m.chase@gmail.com>"
   ]
 }
