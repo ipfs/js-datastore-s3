@@ -56,7 +56,7 @@ class S3Lock {
    * @returns {LockCloser}
    */
   getCloser (lockPath) {
-    return {
+    const closer = {
       /**
        * Removes the lock. This can be overriden to customize how the lock is removed. This
        * is important for removing any created locks.
@@ -74,6 +74,23 @@ class S3Lock {
         })
       }
     }
+
+    const cleanup = () => {
+      console.log('\nAttempting to cleanup gracefully...')
+
+      closer.close(() => {
+        console.log('Cleanup complete, exiting.')
+        process.exit()
+      })
+    }
+
+    // listen for graceful termination
+    process.on('SIGTERM', cleanup)
+    process.on('SIGINT', cleanup)
+    process.on('SIGHUP', cleanup)
+    process.on('uncaughtException', cleanup)
+
+    return closer
   }
 
   /**
