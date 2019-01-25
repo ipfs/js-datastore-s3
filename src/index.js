@@ -4,7 +4,7 @@
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
 const assert = require('assert')
 const path = require('upath')
-const setImmediate = require('async/setImmediate')
+const nextTick = require('async/nextTick')
 const each = require('async/each')
 const waterfall = require('async/series')
 const asyncFilter = require('interface-datastore').utils.asyncFilter
@@ -95,7 +95,7 @@ class S3Datastore {
       if (err && err.code === 'NoSuchBucket' && this.createIfMissing) {
         return this.opts.s3.createBucket({}, (err) => {
           if (err) return callback(err)
-          setImmediate(() => this.put(key, val, callback))
+          nextTick(() => this.put(key, val, callback))
         })
       } else if (err) {
         return callback(Errors.dbWriteFailedError(err))
@@ -367,7 +367,7 @@ class S3Datastore {
    * @returns {void}
    */
   close (callback /* : (err: ?Error) => void */) /* : void */ {
-    setImmediate(callback)
+    nextTick(callback)
   }
 }
 
