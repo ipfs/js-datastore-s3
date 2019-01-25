@@ -11,9 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "async": "^2.6.1",
-    "aws-sdk": "^2.313.0",
+    "aws-sdk": "^2.394.0",
     "datastore-s3": "../../",
-    "ipfs": "~0.32.3",
-    "ipfs-repo": "~0.24.0"
+    "ipfs": "~0.34.4",
+    "ipfs-repo": "~0.26.1"
   }
 }

@@ -4,6 +4,10 @@
   "description": "Datastore implementation backed by s3",
   "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "lint": "aegir lint",
     "test": "aegir test --target node",
@@ -34,18 +38,18 @@
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
     "async": "^2.6.1",
-    "datastore-core": "~0.5.0",
-    "interface-datastore": "~0.5.0",
+    "datastore-core": "~0.6.0",
+    "interface-datastore": "~0.6.0",
     "pull-defer": "~0.2.3",
     "pull-stream": "^3.6.9",
     "upath": "^1.1.0"
   },
   "devDependencies": {
-    "aegir": "^15.2.0",
-    "aws-sdk": "^2.316.0",
-    "chai": "^4.1.2",
+    "aegir": "^18.0.3",
+    "aws-sdk": "^2.394.0",
+    "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
-    "flow-bin": "~0.81.0",
+    "flow-bin": "~0.91.0",
     "flow-typed": "^2.5.1",
     "stand-in": "^4.2.0"
   },
