@@ -75,7 +75,13 @@ class S3Lock {
       }
     }
 
-    const cleanup = () => {
+    const cleanup = (err) => {
+      if (err instanceof Error) {
+        console.log('\nAn Uncaught Exception Occurred:\n', err)
+      } else if (err) {
+        console.log('\nReceived a shutdown signal:', err)
+      }
+
       console.log('\nAttempting to cleanup gracefully...')
 
       closer.close(() => {
