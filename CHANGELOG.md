@@ -1,3 +1,18 @@
+<a name="0.2.1"></a>
+## [0.2.1](https://github.com/ipfs/js-datastore-s3/compare/v0.2.0...v0.2.1) (2019-02-07)
+
+
+### Bug Fixes
+
+* use once to prevent multiple callback calls ([db99ae8](https://github.com/ipfs/js-datastore-s3/commit/db99ae8))
+
+
+### Features
+
+* have the s3 lock cleanup gracefully ([7f6b2c8](https://github.com/ipfs/js-datastore-s3/commit/7f6b2c8))
+
+
+
 <a name="0.2.0"></a>
 # 0.2.0 (2018-10-01)
 
