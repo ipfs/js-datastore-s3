@@ -41,6 +41,23 @@ const store = new S3Store('.ipfs/datastore', {
 })
 ```
 
+### Create a Repo
+You can quickly create an S3 backed repo using the `createRepo` convenience function.
+
+```js
+const IPFS = require('ipfs')
+const { createRepo } = require('datastore-s3')
+
+const ipfs = new IPFS({
+  repo: createRepo({
+    path: '/my/ipfs',
+    createIfMissing: false
+  }, {
+    bucket: 'MyS3Bucket'
+  })
+})
+```
+
 ### Examples
 You can see examples of S3 backed ipfs in the [examples folder](examples/)
 
