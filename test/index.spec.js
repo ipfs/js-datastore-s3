@@ -6,13 +6,13 @@ const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
 
-const Key = require('interface-datastore').Key
-
-const S3 = require('aws-sdk').S3
-const S3Mock = require('./utils/s3-mock')
 const standin = require('stand-in')
+const Key = require('interface-datastore').Key
+const S3 = require('aws-sdk').S3
 
+const S3Mock = require('./utils/s3-mock')
 const S3Store = require('../src')
+const { createRepo } = require('../src')
 
 describe('S3Datastore', () => {
   describe('construction', () => {
@@ -180,6 +180,20 @@ describe('S3Datastore', () => {
         expect(err.code).to.equal('ERR_DB_OPEN_FAILED')
         done()
       })
+    })
+  })
+
+  describe('createRepo', () => {
+    it('should be able to create a repo', () => {
+      const path = '.ipfs/datastore'
+      const repo = createRepo({
+        path
+      }, {
+        bucket: 'my-ipfs-bucket'
+      })
+
+      expect(repo).to.exist()
+      expect(repo.path).to.eql(path)
     })
   })
 

@@ -14,6 +14,7 @@ const asyncSort = require('interface-datastore').utils.asyncSort
 const IDatastore = require('interface-datastore')
 const Key = IDatastore.Key
 const Errors = IDatastore.Errors
+const createRepo = require('./s3-repo')
 
 const Deferred = require('pull-defer')
 const pull = require('pull-stream')
@@ -384,3 +385,6 @@ class S3Datastore {
 }
 
 module.exports = S3Datastore
+module.exports.createRepo = (...args) => {
+  return createRepo(S3Datastore, ...args)
+}

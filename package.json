@@ -1,7 +1,7 @@
 {
   "name": "datastore-s3",
   "version": "0.2.1",
-  "description": "Datastore implementation backed by s3",
+  "description": "IPFS datastore implementation backed by s3",
   "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
   "files": [
@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
-    "async": "^2.6.1",
+    "async": "^2.6.2",
     "datastore-core": "~0.6.0",
     "interface-datastore": "~0.6.0",
     "once": "^1.4.0",
@@ -46,13 +46,17 @@
     "upath": "^1.1.0"
   },
   "devDependencies": {
-    "aegir": "^18.0.3",
-    "aws-sdk": "^2.394.0",
+    "aegir": "^18.1.0",
+    "aws-sdk": "^2.402.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
-    "flow-bin": "~0.91.0",
+    "flow-bin": "~0.93.0",
     "flow-typed": "^2.5.1",
+    "ipfs-repo": "~0.26.1",
     "stand-in": "^4.2.0"
+  },
+  "peerDependencies": {
+    "ipfs-repo": "0.x"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",
