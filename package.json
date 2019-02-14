@@ -56,7 +56,8 @@
     "stand-in": "^4.2.0"
   },
   "peerDependencies": {
-    "ipfs-repo": "0.x"
+    "ipfs-repo": "0.x",
+    "aws-sdk": "2.x"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",
