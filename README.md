@@ -50,8 +50,7 @@ const { createRepo } = require('datastore-s3')
 
 const ipfs = new IPFS({
   repo: createRepo({
-    path: '/my/ipfs',
-    createIfMissing: false
+    path: '/my/ipfs'
   }, {
     bucket: 'MyS3Bucket'
   })
