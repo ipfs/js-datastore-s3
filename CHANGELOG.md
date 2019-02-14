@@ -1,3 +1,13 @@
+<a name="0.2.3"></a>
+## [0.2.3](https://github.com/ipfs/js-datastore-s3/compare/v0.2.2...v0.2.3) (2019-02-14)
+
+
+### Bug Fixes
+
+* aws-sdk should be a peer dependency ([836355c](https://github.com/ipfs/js-datastore-s3/commit/836355c))
+
+
+
 <a name="0.2.2"></a>
 ## [0.2.2](https://github.com/ipfs/js-datastore-s3/compare/v0.2.1...v0.2.2) (2019-02-14)
 
