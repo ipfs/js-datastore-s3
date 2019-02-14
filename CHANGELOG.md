@@ -1,3 +1,13 @@
+<a name="0.2.2"></a>
+## [0.2.2](https://github.com/ipfs/js-datastore-s3/compare/v0.2.1...v0.2.2) (2019-02-14)
+
+
+### Features
+
+* add createRepo utility ([0f5021c](https://github.com/ipfs/js-datastore-s3/commit/0f5021c))
+
+
+
 <a name="0.2.1"></a>
 ## [0.2.1](https://github.com/ipfs/js-datastore-s3/compare/v0.2.0...v0.2.1) (2019-02-07)
 
