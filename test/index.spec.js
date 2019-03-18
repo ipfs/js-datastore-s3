@@ -11,6 +11,7 @@ const Key = require('interface-datastore').Key
 const S3 = require('aws-sdk').S3
 
 const S3Mock = require('./utils/s3-mock')
+const { s3Resolve, s3Reject, S3Error } = S3Mock
 const S3Store = require('../src')
 const { createRepo } = require('../src')
 
@@ -35,19 +36,20 @@ describe('S3Datastore', () => {
   })
 
   describe('put', () => {
-    it('should include the path in the key', (done) => {
+    it('should include the path in the key', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'upload', function (stand, params, callback) {
+      standin.replace(s3, 'upload', function (stand, params) {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         stand.restore()
-        callback(null)
+        return s3Resolve(null)
       })
 
-      store.put(new Key('/z/key'), Buffer.from('test data'), done)
+      return store.put(new Key('/z/key'), Buffer.from('test data'))
     })
-    it('should create the bucket when missing if createIfMissing is true', (done) => {
+
+    it('should create the bucket when missing if createIfMissing is true', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: true })
 
@@ -56,130 +58,134 @@ describe('S3Datastore', () => {
       // 3. upload is then called a second time and it passes
 
       let bucketCreated = false
-      standin.replace(s3, 'upload', (stand, params, callback) => {
+      standin.replace(s3, 'upload', (stand, params) => {
         if (!bucketCreated) {
-          const err = { code: 'NoSuchBucket' }
-          return callback(err)
+          return s3Reject(new S3Error('NoSuchBucket'))
         }
         stand.restore()
-        return callback(null)
+        return s3Resolve(null)
       })
 
-      standin.replace(s3, 'createBucket', (stand, params, callback) => {
+      standin.replace(s3, 'createBucket', (stand, params) => {
         bucketCreated = true
         stand.restore()
-        return callback()
+        return s3Resolve()
       })
 
-      store.put(new Key('/z/key'), Buffer.from('test data'), done)
+      return store.put(new Key('/z/key'), Buffer.from('test data'))
     })
-    it('should not create the bucket when missing if createIfMissing is false', (done) => {
+
+    it('should not create the bucket when missing if createIfMissing is false', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: false })
 
       let bucketCreated = false
-      standin.replace(s3, 'upload', (stand, params, callback) => {
+      standin.replace(s3, 'upload', (stand, params) => {
         if (!bucketCreated) {
-          const err = { code: 'NoSuchBucket' }
-          return callback(err)
+          return s3Reject(new S3Error('NoSuchBucket'))
         }
         stand.restore()
-        return callback(null)
+        return s3Resolve(null)
       })
 
-      standin.replace(s3, 'createBucket', (stand, params, callback) => {
+      standin.replace(s3, 'createBucket', (stand, params) => {
         bucketCreated = true
         stand.restore()
-        return callback()
+        return s3Resolve()
       })
 
-      store.put(new Key('/z/key'), Buffer.from('test data'), (err) => {
+      try {
+        await store.put(new Key('/z/key'), Buffer.from('test data'))
+      } catch (err) {
         expect(bucketCreated).to.equal(false)
         expect(err).to.have.property('code', 'ERR_DB_WRITE_FAILED')
-        done()
-      })
+      }
     })
-    it('should return a standard error when the put fails', (done) => {
+
+    it('should return a standard error when the put fails', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'upload', function (stand, params, callback) {
+      standin.replace(s3, 'upload', function (stand, params) {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         stand.restore()
-        callback(new Error('bad things happened'))
+        return s3Reject(new Error('bad things happened'))
       })
 
-      store.put(new Key('/z/key'), Buffer.from('test data'), (err) => {
+      try {
+        await store.put(new Key('/z/key'), Buffer.from('test data'))
+      } catch (err) {
         expect(err.code).to.equal('ERR_DB_WRITE_FAILED')
-        done()
-      })
+      }
     })
   })
 
   describe('get', () => {
-    it('should include the path in the fetch key', (done) => {
+    it('should include the path in the fetch key', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'getObject', function (stand, params, callback) {
+      standin.replace(s3, 'getObject', function (stand, params) {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         stand.restore()
-        callback(null, { Body: Buffer.from('test') })
+        return s3Resolve({ Body: Buffer.from('test') })
       })
 
-      store.get(new Key('/z/key'), done)
+      return store.get(new Key('/z/key'))
     })
-    it('should return a standard not found error code if the key isnt found', (done) => {
+
+    it('should return a standard not found error code if the key isnt found', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'getObject', function (stand, params, callback) {
+      standin.replace(s3, 'getObject', function (stand, params) {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         stand.restore()
-        let error = new Error('not found')
-        error.statusCode = 404
-        callback(error)
+        return s3Reject(new S3Error('NotFound', 404))
       })
 
-      store.get(new Key('/z/key'), (err) => {
+      try {
+        await store.get(new Key('/z/key'))
+      } catch (err) {
         expect(err.code).to.equal('ERR_NOT_FOUND')
-        done()
-      })
+      }
     })
   })
 
   describe('delete', () => {
-    it('should return a standard delete error if deletion fails', (done) => {
+    it('should return a standard delete error if deletion fails', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'deleteObject', function (stand, params, callback) {
+      standin.replace(s3, 'deleteObject', function (stand, params) {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         stand.restore()
-        callback(new Error('bad things'))
+        return s3Reject(new Error('bad things'))
       })
 
-      store.delete(new Key('/z/key'), (err) => {
+      try {
+        await store.delete(new Key('/z/key'))
+      } catch (err) {
         expect(err.code).to.equal('ERR_DB_DELETE_FAILED')
-        done()
-      })
+      }
     })
   })
 
   describe('open', () => {
-    it('should return a standard open error if the head request fails with an unknown error', (done) => {
+    it('should return a standard open error if the head request fails with an unknown error', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'headObject', function (stand, _, callback) {
+      standin.replace(s3, 'headObject', function (stand, _) {
         stand.restore()
-        callback(new Error('unknown'))
+        return s3Reject(new Error('unknown'))
       })
 
-      store.open((err) => {
+      try {
+        await store.open()
+      } catch (err) {
         expect(err.code).to.equal('ERR_DB_OPEN_FAILED')
-        done()
-      })
+      }
     })
   })
 
@@ -199,15 +205,14 @@ describe('S3Datastore', () => {
 
   describe('interface-datastore', () => {
     require('interface-datastore/src/tests')({
-      setup (callback) {
+      setup () {
         let s3 = new S3({
           params: { Bucket: 'my-ipfs-bucket' }
         })
         S3Mock(s3)
-        callback(null, new S3Store('.ipfs/datastore', { s3 }))
+        return new S3Store('.ipfs/datastore', { s3 })
       },
-      teardown (callback) {
-        callback(null)
+      teardown () {
       }
     })
   })

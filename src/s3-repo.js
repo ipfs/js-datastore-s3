@@ -6,19 +6,11 @@ const IPFSRepo = require('ipfs-repo')
 // A mock lock
 const notALock = {
   getLockfilePath: () => {},
-  lock: (_, cb) => {
-    cb(null, notALock.getCloser())
-  },
-  getCloser: (_) => {
-    return {
-      close: (cb) => {
-        cb()
-      }
-    }
-  },
-  locked: (_, cb) => {
-    cb(null, false)
-  }
+  lock: (_) => notALock.getCloser(),
+  getCloser: (_) => ({
+    close: () => {}
+  }),
+  locked: (_) => false
 }
 
 /**
