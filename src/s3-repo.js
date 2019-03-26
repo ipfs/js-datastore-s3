@@ -69,25 +69,17 @@ const createRepo = (S3Store, options, s3Options) => {
     createIfMissing
   }
 
-  const store = new S3Store(path, storeConfig)
-
-  class Store {
-    constructor () {
-      return store
-    }
-  }
-
   // If no lock is given, create a mock lock
   lock = lock || notALock
 
   return new IPFSRepo(path, {
     storageBackends: {
-      root: Store,
-      blocks: Store,
-      keys: Store,
-      datastore: Store
+      root: S3Store,
+      blocks: S3Store,
+      keys: S3Store,
+      datastore: S3Store
     },
-    storageBackendconfig: {
+    storageBackendOptions: {
       root: storeConfig,
       blocks: storeConfig,
       keys: storeConfig,

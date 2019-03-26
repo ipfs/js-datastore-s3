@@ -185,7 +185,7 @@ describe('S3Datastore', () => {
 
   describe('createRepo', () => {
     it('should be able to create a repo', () => {
-      const path = '.ipfs/datastore'
+      const path = '.ipfs'
       const repo = createRepo({
         path
       }, {
