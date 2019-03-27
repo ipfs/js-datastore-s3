@@ -1,3 +1,13 @@
+<a name="0.2.4"></a>
+## [0.2.4](https://github.com/ipfs/js-datastore-s3/compare/v0.2.3...v0.2.4) (2019-03-27)
+
+
+### Bug Fixes
+
+* **create-repo:** pass sub paths in repo to each store ([1113c61](https://github.com/ipfs/js-datastore-s3/commit/1113c61))
+
+
+
 <a name="0.2.3"></a>
 ## [0.2.3](https://github.com/ipfs/js-datastore-s3/compare/v0.2.2...v0.2.3) (2019-02-14)
 
