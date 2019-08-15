@@ -27,26 +27,24 @@ class S3Lock {
    * Creates the lock. This can be overriden to customize where the lock should be created
    *
    * @param {string} dir
-   * @param {function(Error, LockCloser)} callback
-   * @returns {void}
+   * @returns {Promise<LockCloser>}
    */
-  lock (dir, callback) {
+  async lock (dir) {
     const lockPath = this.getLockfilePath(dir)
 
-    this.locked(dir, (err, alreadyLocked) => {
-      if (err || alreadyLocked) {
-        return callback(new Error('The repo is already locked'))
-      }
+    let alreadyLocked, err
+    try {
+      alreadyLocked = await this.locked(dir)
+    } catch (e) {
+      err = e
+    }
+    if (err || alreadyLocked) {
+      return callback(new Error('The repo is already locked'))
+    }
 
-      // There's no lock yet, create one
-      this.s3.put(lockPath, Buffer.from(''), (err, data) => {
-        if (err) {
-          return callback(err, null)
-        }
-
-        callback(null, this.getCloser(lockPath))
-      })
-    })
+    // There's no lock yet, create one
+    const data = await this.s3.put(lockPath, Buffer.from('')).promise()
+    return this.getCloser(lockPath)
   }
 
   /**
@@ -61,21 +59,20 @@ class S3Lock {
        * Removes the lock. This can be overriden to customize how the lock is removed. This
        * is important for removing any created locks.
        *
-       * @param {function(Error)} callback
-       * @returns {void}
+       * @returns {Promise}
        */
-      close: (callback) => {
-        this.s3.delete(lockPath, (err) => {
-          if (err && err.statusCode !== 404) {
-            return callback(err)
+      async close: () => {
+        try {
+          await this.s3.delete(lockPath).promise()
+        } catch (err) {
+          if (err.statusCode !== 404) {
+            throw err
           }
-
-          callback(null)
-        })
+        }
       }
     }
 
-    const cleanup = (err) => {
+    const cleanup = async (err) => {
       if (err instanceof Error) {
         console.log('\nAn Uncaught Exception Occurred:\n', err)
       } else if (err) {
@@ -84,10 +81,13 @@ class S3Lock {
 
       console.log('\nAttempting to cleanup gracefully...')
 
-      closer.close(() => {
-        console.log('Cleanup complete, exiting.')
-        process.exit()
-      })
+      try {
+        await closer.close()
+      } catch (e) {
+        console.log('Caught error cleaning up: %s', e.message)
+      }
+      console.log('Cleanup complete, exiting.')
+      process.exit()
     }
 
     // listen for graceful termination
@@ -103,19 +103,19 @@ class S3Lock {
    * Calls back on whether or not a lock exists. Override this method to customize how the check is made.
    *
    * @param {string} dir
-   * @param {function(Error, boolean)} callback
-   * @returns {void}
+   * @returns {Promise<boolean>}
    */
-  locked (dir, callback) {
-    this.s3.get(this.getLockfilePath(dir), (err, data) => {
-      if (err && err.code === 'ERR_NOT_FOUND') {
-        return callback(null, false)
-      } else if (err) {
-        return callback(err)
+  async locked (dir) {
+    try {
+      await this.s3.get(this.getLockfilePath(dir)).promise()
+    } catch (err) {
+      if (err.code === 'ERR_NOT_FOUND') {
+        return false
       }
+      throw err
+    }
 
-      callback(null, true)
-    })
+    return true
   }
 }
 

@@ -4,20 +4,17 @@
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
 const assert = require('assert')
 const path = require('upath')
-const nextTick = require('async/nextTick')
-const once = require('once')
-const each = require('async/each')
-const waterfall = require('async/series')
-const asyncFilter = require('interface-datastore').utils.asyncFilter
-const asyncSort = require('interface-datastore').utils.asyncSort
+const {
+  filter,
+  map,
+  take
+} = require('streaming-iterables')
 
 const IDatastore = require('interface-datastore')
+const sortAll = IDatastore.utils.sortAll
 const Key = IDatastore.Key
 const Errors = IDatastore.Errors
 const createRepo = require('./s3-repo')
-
-const Deferred = require('pull-defer')
-const pull = require('pull-stream')
 
 /* :: export type S3DSInputOptions = {
   s3: S3Instance,
@@ -86,90 +83,79 @@ class S3Datastore {
    *
    * @param {Key} key
    * @param {Buffer} val
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise}
    */
-  put (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
-    callback = once(callback)
-    this.opts.s3.upload({
-      Key: this._getFullKey(key),
-      Body: val
-    }, (err, data) => {
-      if (err && err.code === 'NoSuchBucket' && this.createIfMissing) {
-        return this.opts.s3.createBucket({}, (err) => {
-          if (err) return callback(err)
-          nextTick(() => this.put(key, val, callback))
-        })
-      } else if (err) {
-        return callback(Errors.dbWriteFailedError(err))
+  async put (key /* : Key */, val /* : Buffer */) /* : Promise */ {
+    try {
+      await this.opts.s3.upload({
+        Key: this._getFullKey(key),
+        Body: val
+      }).promise()
+    } catch (err) {
+      if (err.code === 'NoSuchBucket' && this.createIfMissing) {
+        await this.opts.s3.createBucket({}).promise()
+        return this.put(key, val)
       }
-
-      callback()
-    })
+      throw Errors.dbWriteFailedError(err)
+    }
   }
 
   /**
    * Read from s3.
    *
    * @param {Key} key
-   * @param {function(Error, Buffer)} callback
-   * @returns {void}
+   * @returns {Promise<Buffer>}
    */
-  get (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
-    callback = once(callback)
-    this.opts.s3.getObject({
-      Key: this._getFullKey(key)
-    }, (err, data) => {
-      if (err && err.statusCode === 404) {
-        return callback(Errors.notFoundError(err))
-      } else if (err) {
-        return callback(err)
-      }
+  async get (key /* : Key */) /* : Promise<Buffer> */ {
+    try {
+      const data = await this.opts.s3.getObject({
+        Key: this._getFullKey(key)
+      }).promise()
 
       // If a body was returned, ensure it's a Buffer
-      callback(null, data.Body ? Buffer.from(data.Body) : null)
-    })
+      return data.Body ? Buffer.from(data.Body) : null
+    } catch (err) {
+      if (err.statusCode === 404) {
+        throw Errors.notFoundError(err)
+      }
+      throw err
+    }
   }
 
   /**
    * Check for the existence of the given key.
    *
    * @param {Key} key
-   * @param {function(Error, bool)} callback
-   * @returns {void}
+   * @returns {Promise<bool>}
    */
-  has (key /* : Key */, callback /* : Callback<bool> */) /* : void */ {
-    callback = once(callback)
-    this.opts.s3.headObject({
-      Key: this._getFullKey(key)
-    }, (err, data) => {
-      if (err && err.code === 'NotFound') {
-        return callback(null, false)
-      } else if (err) {
-        return callback(err, false)
+  async has (key /* : Key */) /* : Promise<bool> */ {
+    try {
+      await this.opts.s3.headObject({
+        Key: this._getFullKey(key)
+      }).promise()
+      return true
+    } catch (err) {
+      if (err.code === 'NotFound') {
+        return false
       }
-
-      callback(null, true)
-    })
+      throw err
+    }
   }
 
   /**
    * Delete the record under the given key.
    *
    * @param {Key} key
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise}
    */
-  delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
-    callback = once(callback)
-    this.opts.s3.deleteObject({
-      Key: this._getFullKey(key)
-    }, (err) => {
-      if (err) {
-        return callback(Errors.dbDeleteFailedError(err))
-      }
-      callback()
-    })
+  async delete (key /* : Key */) /* : Promise */ {
+    try {
+      await this.opts.s3.deleteObject({
+        Key: this._getFullKey(key)
+      }).promise()
+    } catch (err) {
+      throw Errors.dbDeleteFailedError(err)
+    }
   }
 
   /**
@@ -178,8 +164,8 @@ class S3Datastore {
    * @returns {Batch}
    */
   batch () /* : Batch<Buffer> */ {
-    let puts = []
-    let deletes = []
+    const puts = []
+    const deletes = []
     return {
       put (key /* : Key */, value /* : Buffer */) /* : void */ {
         puts.push({ key: key, value: value })
@@ -187,16 +173,10 @@ class S3Datastore {
       delete (key /* : Key */) /* : void */ {
         deletes.push(key)
       },
-      commit: (callback /* : (err: ?Error) => void */) => {
-        callback = once(callback)
-        waterfall([
-          (cb) => each(puts, (p, _cb) => {
-            this.put(p.key, p.value, _cb)
-          }, cb),
-          (cb) => each(deletes, (key, _cb) => {
-            this.delete(key, _cb)
-          }, cb)
-        ], (err) => callback(err))
+      commit: () /* : Promise */ => {
+        const putOps = puts.map((p) => this.put(p.key, p.value))
+        const delOps = deletes.map((key) => this.delete(key))
+        return Promise.all(putOps.concat(delOps))
       }
     }
   }
@@ -204,69 +184,28 @@ class S3Datastore {
   /**
    * Recursively fetches all keys from s3
    * @param {Object} params
-   * @param {Array<Key>} keys
-   * @param {function} callback
-   * @returns {void}
+   * @returns {Iterator<Key>}
    */
-  _listKeys (params /* : { Prefix: string, StartAfter: ?string } */, keys /* : Array<Key> */, callback /* : Callback<void> */) {
-    if (typeof callback === 'undefined') {
-      callback = keys
-      keys = []
+  async * _listKeys (params /* : { Prefix: string, StartAfter: ?string } */) {
+    let data
+    try {
+      data = await this.opts.s3.listObjectsV2(params).promise()
+    } catch (err) {
+      throw new Error(err.code)
     }
 
-    callback = once(callback)
-    this.opts.s3.listObjectsV2(params, (err, data) => {
-      if (err) {
-        return callback(new Error(err.code))
-      }
+    for (const d of data.Contents) {
+      // Remove the path from the key
+      yield new Key(d.Key.slice(this.path.length), false)
+    }
 
-      data.Contents.forEach((d) => {
-        // Remove the path from the key
-        keys.push(new Key(d.Key.slice(this.path.length), false))
-      })
+    // If we didnt get all records, recursively query
+    if (data.isTruncated) {
+      // If NextMarker is absent, use the key from the last result
+      params.StartAfter = data.Contents[data.Contents.length - 1].Key
 
-      // If we didnt get all records, recursively query
-      if (data.isTruncated) {
-        // If NextMarker is absent, use the key from the last result
-        params.StartAfter = data.Contents[data.Contents.length - 1].Key
-
-        // recursively fetch keys
-        return this._listKeys(params, keys, callback)
-      }
-
-      callback(err, keys)
-    })
-  }
-
-  /**
-   * Returns an iterator for fetching objects from s3 by their key
-   * @param {Array<Key>} keys
-   * @param {Boolean} keysOnly Whether or not only keys should be returned
-   * @returns {Iterator}
-   */
-  _getS3Iterator (keys /* : Array<Key> */, keysOnly /* : boolean */) {
-    let count = 0
-
-    return {
-      next: (callback/* : Callback<Error, Key, Buffer> */) => {
-        callback = once(callback)
-
-        // Check if we're done
-        if (count >= keys.length) {
-          return callback(null, null, null)
-        }
-
-        let currentKey = keys[count++]
-
-        if (keysOnly) {
-          return callback(null, currentKey, null)
-        }
-
-        // Fetch the object Buffer from s3
-        this.get(currentKey, (err, data) => {
-          callback(err, currentKey, data)
-        })
-      }
+      // recursively fetch keys
+      yield * this._listKeys(params)
     }
   }
 
@@ -274,113 +213,78 @@ class S3Datastore {
    * Query the store.
    *
    * @param {Object} q
-   * @returns {PullStream}
+   * @returns {Iterable}
    */
   query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
     const prefix = path.join(this.path, q.prefix || '')
 
-    let deferred = Deferred.source()
-    let iterator
-
-    const params /* : Object */ = {
-      Prefix: prefix
-    }
-
-    // this gets called recursively, the internals need to iterate
-    const rawStream = (end, callback) => {
-      callback = once(callback)
-
-      if (end) {
-        return callback(end)
-      }
-
-      iterator.next((err, key, value) => {
-        if (err) {
-          return callback(err)
-        }
-
-        // If the iterator is done, declare the stream done
-        if (err === null && key === null && value === null) {
-          return callback(true) // eslint-disable-line standard/no-callback-literal
-        }
-
-        const res /* : Object */ = {
-          key: key
-        }
-
-        if (value) {
-          res.value = value
-        }
-
-        callback(null, res)
-      })
+    let values = true
+    if (q.keysOnly != null) {
+      values = !q.keysOnly
     }
 
     // Get all the keys via list object, recursively as needed
-    this._listKeys(params, [], (err, keys) => {
-      if (err) {
-        return deferred.abort(err)
-      }
+    const params /* : Object */ = {
+      Prefix: prefix
+    }
+    let it = this._listKeys(params)
 
-      iterator = this._getS3Iterator(keys, q.keysOnly || false)
-
-      deferred.resolve(rawStream)
-    })
-
-    // Use a deferred pull stream source, as async operations need to occur before the
-    // pull stream begins
-    let tasks = [deferred]
-
-    if (q.filters != null) {
-      tasks = tasks.concat(q.filters.map(f => asyncFilter(f)))
+    if (q.prefix != null) {
+      it = filter(k => k.toString().startsWith(q.prefix), it)
     }
 
-    if (q.orders != null) {
-      tasks = tasks.concat(q.orders.map(o => asyncSort(o)))
+    it = map(async (key) => {
+      const res /* : QueryEntry<Buffer> */ = { key }
+      if (values) {
+        // Fetch the object Buffer from s3
+        res.value = await this.get(key)
+      }
+      return res
+    }, it)
+
+    if (Array.isArray(q.filters)) {
+      it = q.filters.reduce((it, f) => filter(f, it), it)
+    }
+
+    if (Array.isArray(q.orders)) {
+      it = q.orders.reduce((it, f) => sortAll(it, f), it)
     }
 
     if (q.offset != null) {
       let i = 0
-      tasks.push(pull.filter(() => i++ >= q.offset))
+      it = filter(() => i++ >= q.offset, it)
     }
 
     if (q.limit != null) {
-      tasks.push(pull.take(q.limit))
+      it = take(q.limit, it)
     }
 
-    return pull.apply(null, tasks)
+    return it
   }
 
   /**
    * This will check the s3 bucket to ensure access and existence
    *
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise}
    */
-  open (callback /* : Callback<void> */) /* : void */ {
-    callback = once(callback)
-    this.opts.s3.headObject({
-      Key: this.path
-    }, (err, data) => {
-      if (err && err.statusCode === 404) {
-        return this.put(new Key('/', false), Buffer.from(''), callback)
+  async open () /* : Promise */ {
+    try {
+      await this.opts.s3.headObject({
+        Key: this.path
+      }).promise()
+    } catch (err) {
+      if (err.statusCode === 404) {
+        return this.put(new Key('/', false), Buffer.from(''))
       }
 
-      if (err) {
-        return callback(Errors.dbOpenFailedError(err))
-      }
-      callback()
-    })
+      throw Errors.dbOpenFailedError(err)
+    }
   }
 
   /**
    * Close the store.
-   *
-   * @param {function(Error)} callback
-   * @returns {void}
    */
-  close (callback /* : (err: ?Error) => void */) /* : void */ {
-    nextTick(callback)
+  close () {
   }
 }
 

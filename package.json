@@ -16,8 +16,7 @@
     "release": "aegir release --target node --docs",
     "release-minor": "aegir release --type minor --target node --docs",
     "release-major": "aegir release --type major --target node --docs",
-    "coverage": "aegir coverage --timeout 10000",
-    "coverage-publish": "aegir coverage --provider codecov --timeout 10000",
+    "coverage": "nyc --reporter=text --reporter=lcov npm run test:node",
     "docs": "aegir docs"
   },
   "repository": {
@@ -37,27 +36,24 @@
   },
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
-    "async": "^2.6.2",
-    "datastore-core": "~0.6.0",
-    "interface-datastore": "~0.6.0",
-    "once": "^1.4.0",
-    "pull-defer": "~0.2.3",
-    "pull-stream": "^3.6.9",
+    "datastore-core": "^0.7.0",
+    "interface-datastore": "^0.7.0",
+    "streaming-iterables": "^4.1.0",
     "upath": "^1.1.0"
   },
   "devDependencies": {
-    "aegir": "^18.1.0",
-    "aws-sdk": "^2.402.0",
+    "aegir": "^20.0.0",
+    "aws-sdk": "^2.510.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
-    "flow-bin": "~0.93.0",
+    "flow-bin": "^0.93.0",
     "flow-typed": "^2.5.1",
-    "ipfs-repo": "~0.26.1",
+    "ipfs-repo": "^0.27.0",
     "stand-in": "^4.2.0"
   },
   "peerDependencies": {
-    "ipfs-repo": "0.x",
-    "aws-sdk": "2.x"
+    "aws-sdk": "2.x",
+    "ipfs-repo": "^0.27.0"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",
