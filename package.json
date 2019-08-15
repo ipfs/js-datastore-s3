@@ -1,6 +1,6 @@
 {
   "name": "datastore-s3",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "IPFS datastore implementation backed by s3",
   "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
@@ -56,8 +56,10 @@
     "ipfs-repo": "^0.27.0"
   },
   "contributors": [
+    "Andrew Nesbitt <andrewnez@gmail.com>",
     "Jacob Heun <jacobheun@gmail.com>",
     "Justin Chase <justin.m.chase@gmail.com>",
-    "Zach Ferland <zachferland@gmail.com>"
+    "Zach Ferland <zachferland@gmail.com>",
+    "dirkmc <dirkmdev@gmail.com>"
   ]
 }
