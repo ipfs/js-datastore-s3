@@ -61,7 +61,7 @@ module.exports = function (s3) {
       Contents: []
     }
 
-    for (let k in storage) {
+    for (const k in storage) {
       if (k.startsWith(params.Prefix)) {
         results.Contents.push({
           Key: k

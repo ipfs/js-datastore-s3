@@ -36,7 +36,7 @@ describe('S3Datastore', () => {
   })
 
   describe('put', () => {
-    it('should include the path in the key', async () => {
+    it('should include the path in the key', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
@@ -49,7 +49,7 @@ describe('S3Datastore', () => {
       return store.put(new Key('/z/key'), Buffer.from('test data'))
     })
 
-    it('should create the bucket when missing if createIfMissing is true', async () => {
+    it('should create the bucket when missing if createIfMissing is true', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: true })
 
@@ -206,7 +206,7 @@ describe('S3Datastore', () => {
   describe('interface-datastore', () => {
     require('interface-datastore/src/tests')({
       setup () {
-        let s3 = new S3({
+        const s3 = new S3({
           params: { Bucket: 'my-ipfs-bucket' }
         })
         S3Mock(s3)

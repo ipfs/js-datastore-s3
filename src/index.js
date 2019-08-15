@@ -164,8 +164,8 @@ class S3Datastore {
    * @returns {Batch}
    */
   batch () /* : Batch<Buffer> */ {
-    let puts = []
-    let deletes = []
+    const puts = []
+    const deletes = []
     return {
       put (key /* : Key */, value /* : Buffer */) /* : void */ {
         puts.push({ key: key, value: value })
