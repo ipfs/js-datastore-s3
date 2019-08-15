@@ -1,3 +1,18 @@
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/ipfs/js-datastore-s3/compare/v0.2.4...v0.3.0) (2019-08-15)
+
+
+### Code Refactoring
+
+* callbacks -> async / await ([#17](https://github.com/ipfs/js-datastore-s3/issues/17)) ([629dba7](https://github.com/ipfs/js-datastore-s3/commit/629dba7))
+
+
+### BREAKING CHANGES
+
+* All places in the API that used callbacks are now replaced with async/await
+
+
+
 <a name="0.2.4"></a>
 ## [0.2.4](https://github.com/ipfs/js-datastore-s3/compare/v0.2.3...v0.2.4) (2019-03-27)
 
