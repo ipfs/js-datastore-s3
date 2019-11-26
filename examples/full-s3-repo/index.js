@@ -3,25 +3,24 @@
 const IPFS = require('ipfs')
 const { createRepo } = require('datastore-s3')
 
-// Create the repo
-const s3Repo = createRepo({
-  path: '/tmp/test/.ipfs'
-}, {
-  bucket: 'my-bucket',
-  accessKeyId: 'myaccesskey',
-  secretAccessKey: 'mysecretkey'
-})
+;(async () => {
+  // Create the repo
+  const s3Repo = createRepo({
+    path: '/tmp/test/.ipfs'
+  }, {
+    bucket: 'my-bucket',
+    accessKeyId: 'myaccesskey',
+    secretAccessKey: 'mysecretkey'
+  })
 
-// Create a new IPFS node with our S3 backed Repo
-let node = new IPFS({
-  repo: s3Repo
-})
+  // Create a new IPFS node with our S3 backed Repo
+  console.log('Start ipfs')
+  const node = await IPFS.create({
+    repo: s3Repo
+  })
 
-console.log('Start the node')
-
-// Test out the repo by sending and fetching some data
-node.on('ready', async () => {
-  console.log('Ready')
+  // Test out the repo by sending and fetching some data
+  console.log('IPFS is ready')
 
   try {
     const version = await node.version()
@@ -36,7 +35,7 @@ node.on('ready', async () => {
 
     // Log out the added files metadata and cat the file from IPFS
     const data = await node.cat(filesAdded[0].hash)
-    
+
     // Print out the files contents to console
     console.log(`\nFetched file content containing ${data.byteLength} bytes`)
   } catch (err) {
@@ -46,5 +45,5 @@ node.on('ready', async () => {
   // After everything is done, shut the node down
   // We don't need to worry about catching errors here
   console.log('\n\nStopping the node')
-  return node.stop()
-})
+  await node.stop()
+})()

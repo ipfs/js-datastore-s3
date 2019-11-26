@@ -42,18 +42,18 @@
     "upath": "^1.1.0"
   },
   "devDependencies": {
-    "aegir": "^20.0.0",
-    "aws-sdk": "^2.510.0",
+    "aegir": "^20.4.1",
+    "aws-sdk": "^2.579.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
     "flow-bin": "^0.93.0",
     "flow-typed": "^2.5.1",
-    "ipfs-repo": "^0.27.0",
+    "ipfs-repo": "^0.29.2",
     "stand-in": "^4.2.0"
   },
   "peerDependencies": {
     "aws-sdk": "2.x",
-    "ipfs-repo": "^0.27.0"
+    "ipfs-repo": "^0.29.0"
   },
   "contributors": [
     "Andrew Nesbitt <andrewnez@gmail.com>",
