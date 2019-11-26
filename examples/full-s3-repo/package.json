@@ -10,9 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.402.0",
+    "aws-sdk": "^2.579.0",
     "datastore-s3": "../../",
-    "ipfs": "~0.34.4",
-    "ipfs-repo": "~0.26.1"
+    "ipfs": "^0.39.0",
+    "ipfs-repo": "~0.29.2"
   }
 }
