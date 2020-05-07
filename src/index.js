@@ -4,16 +4,15 @@
 /* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
 const assert = require('assert')
 const path = require('upath')
-const {
-  filter,
-  map,
-  take
-} = require('streaming-iterables')
 
-const IDatastore = require('interface-datastore')
-const sortAll = IDatastore.utils.sortAll
-const Key = IDatastore.Key
-const Errors = IDatastore.Errors
+const {
+  Adapter,
+  Key,
+  Errors,
+  utils: {
+    filter
+  }
+} = require('interface-datastore')
 const createRepo = require('./s3-repo')
 
 /* :: export type S3DSInputOptions = {
@@ -42,13 +41,15 @@ declare type S3Instance = {
  * Keys need to be sanitized before use, as they are written
  * to the file system as is.
  */
-class S3Datastore {
+class S3Datastore extends Adapter {
   /* :: path: string */
   /* :: opts: S3DSInputOptions */
   /* :: bucket: string */
   /* :: createIfMissing: boolean */
 
   constructor (path /* : string */, opts /* : S3DSInputOptions */) {
+    super()
+
     this.path = path
     this.opts = opts
     const {
@@ -209,13 +210,7 @@ class S3Datastore {
     }
   }
 
-  /**
-   * Query the store.
-   *
-   * @param {Object} q
-   * @returns {Iterable}
-   */
-  query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
+  async * _all (q, options) {
     const prefix = path.join(this.path, q.prefix || '')
 
     let values = true
@@ -230,36 +225,18 @@ class S3Datastore {
     let it = this._listKeys(params)
 
     if (q.prefix != null) {
-      it = filter(k => k.toString().startsWith(q.prefix), it)
+      it = filter(it, k => k.toString().startsWith(q.prefix))
     }
 
-    it = map(async (key) => {
+    for await (const key of it) {
       const res /* : QueryEntry<Buffer> */ = { key }
       if (values) {
         // Fetch the object Buffer from s3
         res.value = await this.get(key)
       }
-      return res
-    }, it)
 
-    if (Array.isArray(q.filters)) {
-      it = q.filters.reduce((it, f) => filter(f, it), it)
+      yield res
     }
-
-    if (Array.isArray(q.orders)) {
-      it = q.orders.reduce((it, f) => sortAll(it, f), it)
-    }
-
-    if (q.offset != null) {
-      let i = 0
-      it = filter(() => i++ >= q.offset, it)
-    }
-
-    if (q.limit != null) {
-      it = take(q.limit, it)
-    }
-
-    return it
   }
 
   /**
@@ -279,12 +256,6 @@ class S3Datastore {
 
       throw Errors.dbOpenFailedError(err)
     }
-  }
-
-  /**
-   * Close the store.
-   */
-  close () {
   }
 }
 
