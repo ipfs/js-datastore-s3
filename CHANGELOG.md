@@ -1,3 +1,18 @@
+<a name="1.0.0"></a>
+# [1.0.0](https://github.com/ipfs/js-datastore-s3/compare/v0.3.0...v1.0.0) (2020-05-08)
+
+
+### Bug Fixes
+
+* **ci:** add empty commit to fix lint checks on master ([4251456](https://github.com/ipfs/js-datastore-s3/commit/4251456))
+
+
+### Features
+
+* adds interface-datastore streaming api ([6c74394](https://github.com/ipfs/js-datastore-s3/commit/6c74394))
+
+
+
 <a name="0.3.0"></a>
 # [0.3.0](https://github.com/ipfs/js-datastore-s3/compare/v0.2.4...v0.3.0) (2019-08-15)
 
