@@ -14,26 +14,11 @@ const notALock = {
 }
 
 /**
- * @typedef {Object} S3Options
- * @property {string} bucket
- * @property {string} region
- * @property {string} accessKeyId
- * @property {string} secretAccessKey
- */
-
-/**
- * @typedef {Object} RepoOptions
- * @property {string} path The path inside the bucket to create the repo
- * @property {boolean} createIfMissing If the repo should be created if it's missing
- * @property {RepoLock} lock An optional lock for the repo
- */
-
-/**
  * A convenience method for creating an S3 backed IPFS repo
- * @param {S3Store} S3Store
- * @param {RepoOptions} options
- * @param {S3Options} s3Options
- * @returns {IPFSRepo}
+ * @param {Object} S3Store
+ * @param {Object} options
+ * @param {Object} s3Options
+ * @returns {Object}
  */
 const createRepo = (S3Store, options, s3Options) => {
   const {

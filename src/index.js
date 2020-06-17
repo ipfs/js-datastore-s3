@@ -1,7 +1,5 @@
-/* @flow */
 'use strict'
 
-/* :: import type {Batch, Query, QueryResult, Callback} from 'interface-datastore' */
 const assert = require('assert')
 const path = require('upath')
 
@@ -15,26 +13,6 @@ const {
 } = require('interface-datastore')
 const createRepo = require('./s3-repo')
 
-/* :: export type S3DSInputOptions = {
-  s3: S3Instance,
-  createIfMissing: ?boolean
-}
-
-declare type S3Instance = {
-  config: {
-    params: {
-      Bucket: ?string
-    }
-  },
-  deleteObject: any,
-  getObject: any,
-  headBucket: any,
-  headObject: any,
-  listObjectsV2: any,
-  upload: any
-}
-*/
-
 /**
  * A datastore backed by the file system.
  *
@@ -42,12 +20,7 @@ declare type S3Instance = {
  * to the file system as is.
  */
 class S3Datastore extends Adapter {
-  /* :: path: string */
-  /* :: opts: S3DSInputOptions */
-  /* :: bucket: string */
-  /* :: createIfMissing: boolean */
-
-  constructor (path /* : string */, opts /* : S3DSInputOptions */) {
+  constructor (path, opts) {
     super()
 
     this.path = path
@@ -74,7 +47,7 @@ class S3Datastore extends Adapter {
    * @param {Key} key
    * @returns {String}
    */
-  _getFullKey (key /* : Key */) {
+  _getFullKey (key) {
     // Avoid absolute paths with s3
     return path.join('.', this.path, key.toString())
   }
@@ -86,7 +59,7 @@ class S3Datastore extends Adapter {
    * @param {Buffer} val
    * @returns {Promise}
    */
-  async put (key /* : Key */, val /* : Buffer */) /* : Promise */ {
+  async put (key, val) {
     try {
       await this.opts.s3.upload({
         Key: this._getFullKey(key),
@@ -107,7 +80,7 @@ class S3Datastore extends Adapter {
    * @param {Key} key
    * @returns {Promise<Buffer>}
    */
-  async get (key /* : Key */) /* : Promise<Buffer> */ {
+  async get (key) {
     try {
       const data = await this.opts.s3.getObject({
         Key: this._getFullKey(key)
@@ -129,7 +102,7 @@ class S3Datastore extends Adapter {
    * @param {Key} key
    * @returns {Promise<bool>}
    */
-  async has (key /* : Key */) /* : Promise<bool> */ {
+  async has (key) {
     try {
       await this.opts.s3.headObject({
         Key: this._getFullKey(key)
@@ -149,7 +122,7 @@ class S3Datastore extends Adapter {
    * @param {Key} key
    * @returns {Promise}
    */
-  async delete (key /* : Key */) /* : Promise */ {
+  async delete (key) {
     try {
       await this.opts.s3.deleteObject({
         Key: this._getFullKey(key)
@@ -164,17 +137,17 @@ class S3Datastore extends Adapter {
    *
    * @returns {Batch}
    */
-  batch () /* : Batch<Buffer> */ {
+  batch () {
     const puts = []
     const deletes = []
     return {
-      put (key /* : Key */, value /* : Buffer */) /* : void */ {
+      put (key, value) {
         puts.push({ key: key, value: value })
       },
-      delete (key /* : Key */) /* : void */ {
+      delete (key) {
         deletes.push(key)
       },
-      commit: () /* : Promise */ => {
+      commit: () => {
         const putOps = puts.map((p) => this.put(p.key, p.value))
         const delOps = deletes.map((key) => this.delete(key))
         return Promise.all(putOps.concat(delOps))
@@ -187,7 +160,7 @@ class S3Datastore extends Adapter {
    * @param {Object} params
    * @returns {Iterator<Key>}
    */
-  async * _listKeys (params /* : { Prefix: string, StartAfter: ?string } */) {
+  async * _listKeys (params) {
     let data
     try {
       data = await this.opts.s3.listObjectsV2(params).promise()
@@ -219,7 +192,7 @@ class S3Datastore extends Adapter {
     }
 
     // Get all the keys via list object, recursively as needed
-    const params /* : Object */ = {
+    const params = {
       Prefix: prefix
     }
     let it = this._listKeys(params)
@@ -229,7 +202,7 @@ class S3Datastore extends Adapter {
     }
 
     for await (const key of it) {
-      const res /* : QueryEntry<Buffer> */ = { key }
+      const res = { key }
       if (values) {
         // Fetch the object Buffer from s3
         res.value = await this.get(key)
@@ -244,7 +217,7 @@ class S3Datastore extends Adapter {
    *
    * @returns {Promise}
    */
-  async open () /* : Promise */ {
+  async open () {
     try {
       await this.opts.s3.headObject({
         Key: this.path
