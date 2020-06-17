@@ -36,11 +36,10 @@
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
     "datastore-core": "^1.1.0",
-    "interface-datastore": "^1.0.2",
-    "upath": "^1.1.0"
+    "interface-datastore": "^1.0.2"
   },
   "devDependencies": {
-    "aegir": "^24.0.0",
+    "aegir": "^23.0.0",
     "aws-sdk": "^2.579.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
