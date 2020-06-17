@@ -40,16 +40,16 @@
     "upath": "^1.1.0"
   },
   "devDependencies": {
-    "aegir": "^22.0.0",
+    "aegir": "^24.0.0",
     "aws-sdk": "^2.579.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
-    "ipfs-repo": "^2.1.1",
+    "ipfs-repo": "^3.0.2",
     "stand-in": "^4.2.0"
   },
   "peerDependencies": {
     "aws-sdk": "2.x",
-    "ipfs-repo": "^0.29.0"
+    "ipfs-repo": "^3.0.2"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",
