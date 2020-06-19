@@ -1,6 +1,6 @@
 'use strict'
 
-const assert = require('assert')
+const { Buffer } = require('buffer')
 
 const {
   Adapter,
@@ -35,8 +35,12 @@ class S3Datastore extends Adapter {
       } = {}
     } = opts
 
-    assert(typeof Bucket === 'string', 'An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
-    assert(typeof createIfMissing === 'boolean', `createIfMissing must be a boolean but was (${typeof createIfMissing}) ${createIfMissing}`)
+    if (typeof Bucket !== 'string') {
+      throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
+    }
+    if (typeof createIfMissing !== 'boolean') {
+      throw new Error(`createIfMissing must be a boolean but was (${typeof createIfMissing}) ${createIfMissing}`)
+    }
     this.bucket = Bucket
     this.createIfMissing = createIfMissing
   }

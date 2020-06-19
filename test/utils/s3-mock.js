@@ -5,6 +5,8 @@ chai.use(require('dirty-chai'))
 const expect = chai.expect
 const standin = require('stand-in')
 
+const { Buffer } = require('buffer')
+
 class S3Error extends Error {
   constructor (message, code) {
     super(message)

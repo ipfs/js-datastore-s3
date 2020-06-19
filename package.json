@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "lint": "aegir lint",
-    "test": "aegir test --target node",
+    "test": "aegir test",
     "test:node": "aegir test --target node",
     "release": "aegir release --target node --docs",
     "release-minor": "aegir release --type minor --target node --docs",
@@ -35,6 +35,7 @@
   },
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
+    "buffer": "^5.6.0",
     "datastore-core": "^1.1.0",
     "interface-datastore": "^1.0.2"
   },
