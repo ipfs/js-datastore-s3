@@ -1,7 +1,6 @@
 'use strict'
 
 const assert = require('assert')
-const path = require('upath')
 
 const {
   Adapter,
@@ -49,7 +48,7 @@ class S3Datastore extends Adapter {
    */
   _getFullKey (key) {
     // Avoid absolute paths with s3
-    return path.join('.', this.path, key.toString())
+    return [this.path, key.toString()].join('/').replace(/\/\/+/g, '/')
   }
 
   /**
@@ -184,7 +183,7 @@ class S3Datastore extends Adapter {
   }
 
   async * _all (q, options) {
-    const prefix = path.join(this.path, q.prefix || '')
+    const prefix = [this.path, q.prefix || ''].join('/').replace(/\/\/+/g, '/')
 
     let values = true
     if (q.keysOnly != null) {
