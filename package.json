@@ -39,7 +39,7 @@
     "interface-datastore": "^1.0.2"
   },
   "devDependencies": {
-    "aegir": "^23.0.0",
+    "aegir": "^24.0.0",
     "aws-sdk": "^2.579.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
