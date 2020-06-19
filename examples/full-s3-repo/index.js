@@ -2,6 +2,8 @@
 
 const IPFS = require('ipfs')
 const { createRepo } = require('datastore-s3')
+const toBuffer = require('it-to-buffer')
+const last = require('it-last')
 
 ;(async () => {
   // Create the repo
@@ -27,14 +29,15 @@ const { createRepo } = require('datastore-s3')
     console.log('Version:', version.version)
 
     // Once we have the version, let's add a file to IPFS
-    const filesAdded = await node.add({
+    const { path, cid } = await last(node.add({
       path: 'data.txt',
       content: Buffer.from(require('crypto').randomBytes(1024 * 25))
-    })
-    console.log('\nAdded file:', filesAdded[0].path, filesAdded[0].hash)
+    }))
+
+    console.log('\nAdded file:', path, cid)
 
     // Log out the added files metadata and cat the file from IPFS
-    const data = await node.cat(filesAdded[0].hash)
+    const data = await toBuffer(node.cat(cid))
 
     // Print out the files contents to console
     console.log(`\nFetched file content containing ${data.byteLength} bytes`)

@@ -12,7 +12,9 @@
   "dependencies": {
     "aws-sdk": "^2.579.0",
     "datastore-s3": "../../",
-    "ipfs": "^0.39.0",
-    "ipfs-repo": "~0.29.2"
+    "ipfs": "^0.46.0",
+    "ipfs-repo": "^3.0.2",
+    "it-last": "^1.0.2",
+    "it-to-buffer": "^1.0.2"
   }
 }
