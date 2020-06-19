@@ -5,6 +5,7 @@ const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
 
+const { Buffer } = require('buffer')
 const standin = require('stand-in')
 const Key = require('interface-datastore').Key
 const S3 = require('aws-sdk').S3
