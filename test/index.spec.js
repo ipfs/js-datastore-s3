@@ -167,6 +167,9 @@ describe('S3Datastore', () => {
 
       result = await store.get(new Key('/z/key'))
       expect(result).to.equal(cachedResult)
+
+      const noResult = store.getFromCache(store.s3DataCache, new Key('/z/key1'))
+      expect(noResult).to.equal(undefined)
     })
 
     it('should expire from cache', async () => {
