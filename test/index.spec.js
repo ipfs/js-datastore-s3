@@ -150,6 +150,44 @@ describe('S3Datastore', () => {
         expect(err.code).to.equal('ERR_NOT_FOUND')
       }
     })
+
+    it('should cache the result', async () => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3, cacheEnabled: true })
+
+      standin.replace(s3, 'getObject', function (stand, params) {
+        expect(params.Key).to.equal('.ipfs/datastore/z/key')
+        stand.restore()
+        return s3Resolve({ Body: Buffer.from('test') })
+      })
+
+      const result = await store.get(new Key('/z/key'))
+      const cachedResult = store.getFromCache(store.s3DataCache, new Key('/z/key'))
+      expect(result).to.equal(cachedResult)
+    })
+
+    it('should expire from cache', async () => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3, cacheEnabled: true, cacheTTL: 1 })
+
+      standin.replace(s3, 'getObject', function (stand, params) {
+        expect(params.Key).to.equal('.ipfs/datastore/z/key')
+        stand.restore()
+        return s3Resolve({ Body: Buffer.from('test') })
+      })
+
+      const result = await store.get(new Key('/z/key'))
+      expect(result).to.not.equal(null)
+
+      const sleep = (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      await sleep(5)
+
+      const cachedResult = store.getFromCache(store.s3DataCache, new Key('/z/key'))
+      expect(cachedResult).to.equals(undefined)
+    })
   })
 
   describe('delete', () => {

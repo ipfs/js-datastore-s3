@@ -37,7 +37,8 @@
   "dependencies": {
     "buffer": "^5.6.0",
     "datastore-core": "^1.1.0",
-    "interface-datastore": "^1.0.2"
+    "interface-datastore": "^1.0.2",
+    "js-cache": "^1.0.3"
   },
   "devDependencies": {
     "aegir": "^24.0.0",
