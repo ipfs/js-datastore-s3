@@ -57,7 +57,7 @@ class S3Datastore extends Adapter {
     this.createIfMissing = createIfMissing
     this.cacheEnabled = cacheEnabled
 
-    if (this.cacheEnabled === true) {
+    if (this.cacheEnabled) {
       this.cacheTTL = cacheTTL
       this.s3DataCache = new cache() // create cache for values
       this.s3HeadCache = new cache() // create cache for HEAD results
