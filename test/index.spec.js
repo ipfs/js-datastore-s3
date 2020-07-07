@@ -161,8 +161,11 @@ describe('S3Datastore', () => {
         return s3Resolve({ Body: Buffer.from('test') })
       })
 
-      const result = await store.get(new Key('/z/key'))
+      let result = await store.get(new Key('/z/key'))
       const cachedResult = store.getFromCache(store.s3DataCache, new Key('/z/key'))
+      expect(result).to.equal(cachedResult)
+
+      result = await store.get(new Key('/z/key'))
       expect(result).to.equal(cachedResult)
     })
 

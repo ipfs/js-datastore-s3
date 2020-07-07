@@ -140,13 +140,15 @@ class S3Datastore extends Adapter {
       return undefined
     }
 
-    const data = cache.get(this._getFullKey(key))
+    const fullKey = this._getFullKey(key)
+    const data = cache.get(fullKey)
     if (data !== undefined) {
+      console.log(`Got value for ${fullKey} from cache`)
       if (data instanceof Error) {
         throw data
       }
-      return data
     }
+    return data
   }
 
   /**
@@ -160,6 +162,9 @@ class S3Datastore extends Adapter {
     if (!this.cacheEnabled) {
       return
     }
+
+    const fullKey = this._getFullKey(key)
+    console.log(`Put value for ${fullKey} to cache`)
 
     const timeToLive = ttl? ttl : this.cacheTTL
     cache.set(this._getFullKey(key), value, timeToLive)
