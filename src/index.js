@@ -198,7 +198,7 @@ class S3Datastore extends Adapter {
       return true
     } catch (err) {
       if (err.code === 'NotFound') {
-        this.putToCache(this.s3HeadCache, key, false)
+        this.putToCache(this.s3HeadCache, key, false, DEFAULT_404_CACHE_TTL)
         return false
       }
       throw err
