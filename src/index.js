@@ -2,6 +2,8 @@
 
 const { Buffer } = require('buffer')
 
+const cache = require('js-cache');
+
 const {
   Adapter,
   Key,
@@ -11,6 +13,8 @@ const {
   }
 } = require('interface-datastore')
 const createRepo = require('./s3-repo')
+
+const DEFAULT_CACHE_TTL = 10000 // 10 seconds
 
 /**
  * A datastore backed by the file system.
@@ -25,6 +29,8 @@ class S3Datastore extends Adapter {
     this.path = path
     this.opts = opts
     const {
+      cacheEnabled = false,
+      cacheTTL = DEFAULT_CACHE_TTL,
       createIfMissing = false,
       s3: {
         config: {
@@ -41,8 +47,21 @@ class S3Datastore extends Adapter {
     if (typeof createIfMissing !== 'boolean') {
       throw new Error(`createIfMissing must be a boolean but was (${typeof createIfMissing}) ${createIfMissing}`)
     }
+    if (typeof cacheEnabled !== 'boolean') {
+      throw new Error(`cacheEnabled must be a boolean but was (${typeof cacheEnabled}) ${cacheEnabled}`)
+    }
+    if (typeof cacheTTL !== 'number') {
+      throw new Error(`cacheTTL must be a number but was (${typeof cacheTTL}) ${cacheTTL}`)
+    }
     this.bucket = Bucket
     this.createIfMissing = createIfMissing
+    this.cacheEnabled = cacheEnabled
+
+    if (this.cacheEnabled === true) {
+      this.cacheTTL = cacheTTL
+      this.s3DataCache = new cache() // create cache for values
+      this.s3HeadCache = new cache() // create cache for HEAD results
+    }
   }
 
   /**
@@ -84,19 +103,73 @@ class S3Datastore extends Adapter {
    * @returns {Promise<Buffer>}
    */
   async get (key) {
+    let data = this.getFromCache(this.s3DataCache, key)
+    if (data !== undefined) {
+      return data
+    }
+
     try {
-      const data = await this.opts.s3.getObject({
+      let data = await this.opts.s3.getObject({
         Key: this._getFullKey(key)
       }).promise()
 
       // If a body was returned, ensure it's a Buffer
-      return data.Body ? Buffer.from(data.Body) : null
+      let result = data.Body ? Buffer.from(data.Body) : null
+      this.putToCache(this.s3DataCache, key, result)
+      return result
     } catch (err) {
       if (err.statusCode === 404) {
-        throw Errors.notFoundError(err)
+        const wrappedErr = Errors.notFoundError(err)
+        this.putToCache(this.s3DataCache, key, wrappedErr)
+        throw wrappedErr
       }
       throw err
     }
+  }
+
+  /**
+   * Gets value stored in cache
+   * @param cache - Cache instance
+   * @param key - Key
+   * @return {undefined|*}
+   */
+  getFromCache(cache, key) {
+    if (!this.cacheEnabled) {
+      return undefined
+    }
+
+    const data = cache.get(this._getFullKey(key))
+    if (data !== undefined) {
+      if (data instanceof Error) {
+        throw data
+      }
+      return data
+    }
+  }
+
+  /**
+   * Puts value into cache
+   * @param cache - Cache instance
+   * @param key - Key
+   * @param value - Value
+   */
+  putToCache(cache, key, value) {
+    if (!this.cacheEnabled) {
+      return
+    }
+    cache.set(this._getFullKey(key), value, this.cacheTTL)
+  }
+
+  /**
+   * Deletes value from cache
+   * @param cache - Cache instance
+   * @param key - Key
+   */
+  delFromCache(cache, key) {
+    if (!this.cacheEnabled) {
+      return
+    }
+    cache.del(key)
   }
 
   /**
@@ -106,13 +179,21 @@ class S3Datastore extends Adapter {
    * @returns {Promise<bool>}
    */
   async has (key) {
+    const result = this.getFromCache(this.s3HeadCache, key)
+    if (result !== undefined) {
+      return result
+    }
+
     try {
       await this.opts.s3.headObject({
         Key: this._getFullKey(key)
       }).promise()
+
+      this.putToCache(this.s3HeadCache, key, true)
       return true
     } catch (err) {
       if (err.code === 'NotFound') {
+        this.putToCache(this.s3HeadCache, key, false)
         return false
       }
       throw err
@@ -127,6 +208,11 @@ class S3Datastore extends Adapter {
    */
   async delete (key) {
     try {
+      if (this.cacheEnabled) {
+        this.delFromCache(this.s3DataCache, key)
+        this.delFromCache(this.s3HeadCache, key)
+      }
+
       await this.opts.s3.deleteObject({
         Key: this._getFullKey(key)
       }).promise()
