@@ -31,6 +31,8 @@ const createRepo = (S3Store, options, s3Options) => {
   let {
     path,
     createIfMissing,
+    cacheEnabled,
+    cacheTTL,
     lock
   } = options
 
@@ -43,7 +45,9 @@ const createRepo = (S3Store, options, s3Options) => {
       accessKeyId,
       secretAccessKey
     }),
-    createIfMissing
+    createIfMissing,
+    cacheEnabled,
+    cacheTTL
   }
 
   // If no lock is given, create a mock lock
