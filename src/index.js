@@ -16,6 +16,8 @@ const createRepo = require('./s3-repo')
 
 const DEFAULT_CACHE_TTL = 10000 // 10 seconds
 
+const DEFAULT_404_CACHE_TTL = 2000 // 2 seconds
+
 /**
  * A datastore backed by the file system.
  *
@@ -120,7 +122,7 @@ class S3Datastore extends Adapter {
     } catch (err) {
       if (err.statusCode === 404) {
         const wrappedErr = Errors.notFoundError(err)
-        this.putToCache(this.s3DataCache, key, wrappedErr)
+        this.putToCache(this.s3DataCache, key, wrappedErr, DEFAULT_404_CACHE_TTL)
         throw wrappedErr
       }
       throw err
@@ -152,12 +154,15 @@ class S3Datastore extends Adapter {
    * @param cache - Cache instance
    * @param key - Key
    * @param value - Value
+   * @param ttl - Time to live
    */
-  putToCache(cache, key, value) {
+  putToCache(cache, key, value, ttl) {
     if (!this.cacheEnabled) {
       return
     }
-    cache.set(this._getFullKey(key), value, this.cacheTTL)
+
+    const timeToLive = ttl? ttl : this.cacheTTL
+    cache.set(this._getFullKey(key), value, timeToLive)
   }
 
   /**
