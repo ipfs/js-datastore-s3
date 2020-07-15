@@ -2,7 +2,7 @@
 
 const { Buffer } = require('buffer')
 
-const cache = require('js-cache');
+const cache = require('js-cache')
 
 const {
   Adapter,
@@ -61,7 +61,9 @@ class S3Datastore extends Adapter {
 
     if (this.cacheEnabled) {
       this.cacheTTL = cacheTTL
+      // eslint-disable-next-line new-cap
       this.s3DataCache = new cache() // create cache for values
+      // eslint-disable-next-line new-cap
       this.s3HeadCache = new cache() // create cache for HEAD results
     }
   }
@@ -105,18 +107,18 @@ class S3Datastore extends Adapter {
    * @returns {Promise<Buffer>}
    */
   async get (key) {
-    let data = this.getFromCache(this.s3DataCache, key)
+    const data = this.getFromCache(this.s3DataCache, key)
     if (data !== undefined) {
       return data
     }
 
     try {
-      let data = await this.opts.s3.getObject({
+      const data = await this.opts.s3.getObject({
         Key: this._getFullKey(key)
       }).promise()
 
       // If a body was returned, ensure it's a Buffer
-      let result = data.Body ? Buffer.from(data.Body) : null
+      const result = data.Body ? Buffer.from(data.Body) : null
       this.putToCache(this.s3DataCache, key, result)
       return result
     } catch (err) {
@@ -131,11 +133,11 @@ class S3Datastore extends Adapter {
 
   /**
    * Gets value stored in cache
-   * @param cache - Cache instance
-   * @param key - Key
+   * @param {Cache} cache Cache instance
+   * @param {string} key Key
    * @return {undefined|*}
    */
-  getFromCache(cache, key) {
+  getFromCache (cache, key) {
     if (!this.cacheEnabled) {
       return undefined
     }
@@ -143,7 +145,6 @@ class S3Datastore extends Adapter {
     const fullKey = this._getFullKey(key)
     const data = cache.get(fullKey)
     if (data !== undefined) {
-      console.log(`Got value for ${fullKey} from cache`)
       if (data instanceof Error) {
         throw data
       }
@@ -153,29 +154,26 @@ class S3Datastore extends Adapter {
 
   /**
    * Puts value into cache
-   * @param cache - Cache instance
-   * @param key - Key
-   * @param value - Value
-   * @param ttl - Time to live
+   * @param {Cache} cache Cache instance
+   * @param {Key} key Key
+   * @param {Object} value Value
+   * @param {Number} ttl Time to live
    */
-  putToCache(cache, key, value, ttl) {
+  putToCache (cache, key, value, ttl) {
     if (!this.cacheEnabled) {
       return
     }
 
     const fullKey = this._getFullKey(key)
-    console.log(`Put value for ${fullKey} to cache`)
-
-    const timeToLive = ttl? ttl : this.cacheTTL
-    cache.set(this._getFullKey(key), value, timeToLive)
+    cache.set(fullKey, value, ttl || this.cacheTTL)
   }
 
   /**
    * Deletes value from cache
-   * @param cache - Cache instance
-   * @param key - Key
+   * @param {Cache} cache Cache instance
+   * @param {Key} key Key
    */
-  delFromCache(cache, key) {
+  delFromCache (cache, key) {
     if (!this.cacheEnabled) {
       return
     }

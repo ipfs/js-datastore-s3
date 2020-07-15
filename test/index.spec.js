@@ -186,7 +186,7 @@ describe('S3Datastore', () => {
       expect(result).to.not.equal(null)
 
       const sleep = (ms) => {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => setTimeout(resolve, ms))
       }
 
       await sleep(5)
