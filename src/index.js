@@ -177,7 +177,7 @@ class S3Datastore extends Adapter {
     if (!this.cacheEnabled) {
       return
     }
-    cache.del(key)
+    cache.del(this._getFullKey(key))
   }
 
   /**
