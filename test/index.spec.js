@@ -162,13 +162,13 @@ describe('S3Datastore', () => {
       })
 
       let result = await store.get(new Key('/z/key'))
-      const cachedResult = store.getFromCache(store.s3DataCache, new Key('/z/key'))
+      const cachedResult = store.getFromCache(store.cache, new Key('/z/key'))
       expect(result).to.equal(cachedResult)
 
       result = await store.get(new Key('/z/key'))
       expect(result).to.equal(cachedResult)
 
-      const noResult = store.getFromCache(store.s3DataCache, new Key('/z/key1'))
+      const noResult = store.getFromCache(store.cache, new Key('/z/key1'))
       expect(noResult).to.equal(undefined)
     })
 
@@ -191,7 +191,7 @@ describe('S3Datastore', () => {
 
       await sleep(5)
 
-      const cachedResult = store.getFromCache(store.s3DataCache, new Key('/z/key'))
+      const cachedResult = store.getFromCache(store.cache, new Key('/z/key'))
       expect(cachedResult).to.equals(undefined)
     })
 
@@ -208,9 +208,9 @@ describe('S3Datastore', () => {
       const result = await store.get(new Key('/z/key'))
       expect(result).to.not.equal(null)
 
-      store.delFromCache(store.s3DataCache, new Key('/z/key'))
+      store.delFromCache(store.cache, new Key('/z/key'))
 
-      const cachedResult = store.getFromCache(store.s3DataCache, new Key('/z/key'))
+      const cachedResult = store.getFromCache(store.cache, new Key('/z/key'))
       expect(cachedResult).to.equals(undefined)
     })
   })

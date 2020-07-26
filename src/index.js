@@ -16,7 +16,7 @@ const createRepo = require('./s3-repo')
 
 const DEFAULT_CACHE_TTL = 10000 // 10 seconds
 
-const DEFAULT_404_CACHE_TTL = 2000 // 2 seconds
+const DEFAULT_NOT_EXIST_CACHE_TTL = 2000 // 2 seconds
 
 /**
  * A datastore backed by the file system.
@@ -62,9 +62,7 @@ class S3Datastore extends Adapter {
     if (this.cacheEnabled) {
       this.cacheTTL = cacheTTL
       // eslint-disable-next-line new-cap
-      this.s3DataCache = new cache() // create cache for values
-      // eslint-disable-next-line new-cap
-      this.s3HeadCache = new cache() // create cache for HEAD results
+      this.cache = new cache() // create cache for values
     }
   }
 
@@ -107,7 +105,7 @@ class S3Datastore extends Adapter {
    * @returns {Promise<Buffer>}
    */
   async get (key) {
-    const data = this.getFromCache(this.s3DataCache, key)
+    const data = this.getFromCache(this.cache, key)
     if (data !== undefined) {
       return data
     }
@@ -119,12 +117,12 @@ class S3Datastore extends Adapter {
 
       // If a body was returned, ensure it's a Buffer
       const result = data.Body ? Buffer.from(data.Body) : null
-      this.putToCache(this.s3DataCache, key, result)
+      this.putToCache(this.cache, key, result, this.cacheTTL)
       return result
     } catch (err) {
       if (err.statusCode === 404) {
         const wrappedErr = Errors.notFoundError(err)
-        this.putToCache(this.s3DataCache, key, wrappedErr, DEFAULT_404_CACHE_TTL)
+        this.putToCache(this.cache, key, wrappedErr, DEFAULT_NOT_EXIST_CACHE_TTL)
         throw wrappedErr
       }
       throw err
@@ -159,7 +157,7 @@ class S3Datastore extends Adapter {
    * @param {Object} value Value
    * @param {Number} ttl Time to live
    */
-  putToCache (cache, key, value, ttl) {
+  putToCache (cache, key, value, ttl= DEFAULT_CACHE_TTL) {
     if (!this.cacheEnabled) {
       return
     }
@@ -187,7 +185,7 @@ class S3Datastore extends Adapter {
    * @returns {Promise<bool>}
    */
   async has (key) {
-    const result = this.getFromCache(this.s3HeadCache, key)
+    const result = this.getFromCache(this.cache, key)
     if (result !== undefined) {
       return result
     }
@@ -197,11 +195,11 @@ class S3Datastore extends Adapter {
         Key: this._getFullKey(key)
       }).promise()
 
-      this.putToCache(this.s3HeadCache, key, true)
+      this.putToCache(this.cache, key, true)
       return true
     } catch (err) {
       if (err.code === 'NotFound') {
-        this.putToCache(this.s3HeadCache, key, false, DEFAULT_404_CACHE_TTL)
+        this.putToCache(this.cache, key, false, DEFAULT_NOT_EXIST_CACHE_TTL)
         return false
       }
       throw err
@@ -217,8 +215,7 @@ class S3Datastore extends Adapter {
   async delete (key) {
     try {
       if (this.cacheEnabled) {
-        this.delFromCache(this.s3DataCache, key)
-        this.delFromCache(this.s3HeadCache, key)
+        this.delFromCache(this.cache, key)
       }
 
       await this.opts.s3.deleteObject({
