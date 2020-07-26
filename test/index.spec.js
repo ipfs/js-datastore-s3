@@ -172,8 +172,13 @@ describe('S3Datastore', () => {
       })
 
       let result = await store.get(new Key('/z/key'))
+      expect(result).to.not.equal(null)
+
       const cachedResult = store.getFromCache(store.cache, new Key('/z/key'))
-      expect(result).to.equal(cachedResult)
+      expect(cachedResult).to.equal(result)
+
+      result = await store.has(new Key('/z/key'))
+      expect(result).to.equal(true)
 
       result = await store.get(new Key('/z/key'))
       expect(result).to.equal(cachedResult)

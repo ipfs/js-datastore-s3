@@ -192,7 +192,7 @@ class S3Datastore extends Adapter {
   async has (key) {
     const result = this.getFromCache(this.cache, key)
     if (result !== undefined) {
-      return result
+      return true
     }
 
     try {
