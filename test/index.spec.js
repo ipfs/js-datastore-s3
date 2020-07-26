@@ -131,7 +131,11 @@ describe('S3Datastore', () => {
         return s3Resolve({ Body: Buffer.from('test') })
       })
 
-      return store.get(new Key('/z/key'))
+      let result = store.get(new Key('/z/key'))
+      expect(result).to.not.equal(null)
+
+      result = store.getFromCache(store.cache, new Key('/z/key'))
+      expect(result).to.equal(undefined)
     })
 
     it('should return a standard not found error code if the key isn\'t found', async () => {
@@ -211,10 +215,16 @@ describe('S3Datastore', () => {
         return s3Resolve({ Body: Buffer.from('test') })
       })
 
+      standin.replace(s3, 'deleteObject', function (stand, params) {
+        expect(params.Key).to.equal('.ipfs/datastore/z/key')
+        stand.restore()
+        return s3Resolve()
+      })
+
       const result = await store.get(new Key('/z/key'))
       expect(result).to.not.equal(null)
 
-      store.delFromCache(store.cache, new Key('/z/key'))
+      await store.delete(new Key('/z/key'))
 
       const cachedResult = store.getFromCache(store.cache, new Key('/z/key'))
       expect(cachedResult).to.equals(undefined)
