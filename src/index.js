@@ -16,7 +16,7 @@ const createRepo = require('./s3-repo')
 
 const DEFAULT_CACHE_TTL = 10000 // 10 seconds
 
-const DEFAULT_NOT_EXIST_CACHE_TTL = 2000 // 2 seconds
+const DEFAULT_NOT_FOUND_CACHE_TTL = 2000 // 2 seconds
 
 /**
  * A datastore backed by the file system.
@@ -33,6 +33,7 @@ class S3Datastore extends Adapter {
     const {
       cacheEnabled = false,
       cacheTTL = DEFAULT_CACHE_TTL,
+      cacheNotFoundTTL = DEFAULT_NOT_FOUND_CACHE_TTL,
       createIfMissing = false,
       s3: {
         config: {
@@ -55,12 +56,16 @@ class S3Datastore extends Adapter {
     if (typeof cacheTTL !== 'number') {
       throw new Error(`cacheTTL must be a number but was (${typeof cacheTTL}) ${cacheTTL}`)
     }
+    if (typeof cacheNotFoundTTL !== 'number') {
+      throw new Error(`cacheNotFoundTTL must be a number but was (${typeof cacheNotFoundTTL}) ${cacheNotFoundTTL}`)
+    }
     this.bucket = Bucket
     this.createIfMissing = createIfMissing
     this.cacheEnabled = cacheEnabled
 
     if (this.cacheEnabled) {
       this.cacheTTL = cacheTTL
+      this.cacheNotFoundTTL = cacheNotFoundTTL
       // eslint-disable-next-line new-cap
       this.cache = new cache() // create cache for values
     }
@@ -122,7 +127,7 @@ class S3Datastore extends Adapter {
     } catch (err) {
       if (err.statusCode === 404) {
         const wrappedErr = Errors.notFoundError(err)
-        this.putToCache(this.cache, key, wrappedErr, DEFAULT_NOT_EXIST_CACHE_TTL)
+        this.putToCache(this.cache, key, wrappedErr, this.cacheNotFoundTTL)
         throw wrappedErr
       }
       throw err
@@ -199,7 +204,7 @@ class S3Datastore extends Adapter {
       return true
     } catch (err) {
       if (err.code === 'NotFound') {
-        this.putToCache(this.cache, key, false, DEFAULT_NOT_EXIST_CACHE_TTL)
+        this.putToCache(this.cache, key, false, this.cacheNotFoundTTL)
         return false
       }
       throw err
