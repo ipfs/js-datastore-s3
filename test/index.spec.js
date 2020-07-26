@@ -134,9 +134,9 @@ describe('S3Datastore', () => {
       return store.get(new Key('/z/key'))
     })
 
-    it('should return a standard not found error code if the key isnt found', async () => {
+    it('should return a standard not found error code if the key isn\'t found', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Store('.ipfs/datastore', { s3 })
+      const store = new S3Store('.ipfs/datastore', { s3, cacheEnabled: true })
 
       standin.replace(s3, 'getObject', function (stand, params) {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
@@ -146,6 +146,12 @@ describe('S3Datastore', () => {
 
       try {
         await store.get(new Key('/z/key'))
+      } catch (err) {
+        expect(err.code).to.equal('ERR_NOT_FOUND')
+      }
+
+      try {
+        store.getFromCache(store.cache, new Key('/z/key'))
       } catch (err) {
         expect(err.code).to.equal('ERR_NOT_FOUND')
       }
