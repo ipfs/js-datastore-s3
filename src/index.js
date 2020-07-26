@@ -157,7 +157,7 @@ class S3Datastore extends Adapter {
    * @param {Object} value Value
    * @param {Number} ttl Time to live
    */
-  putToCache (cache, key, value, ttl= DEFAULT_CACHE_TTL) {
+  putToCache (cache, key, value, ttl = DEFAULT_CACHE_TTL) {
     if (!this.cacheEnabled) {
       return
     }
