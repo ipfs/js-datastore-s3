@@ -59,14 +59,14 @@ class S3Datastore extends Adapter {
    * Store the given value under the key.
    *
    * @param {Key} key
-   * @param {Buffer} val
+   * @param {Uint8Array} val
    * @returns {Promise}
    */
   async put (key, val) {
     try {
       await this.opts.s3.upload({
         Key: this._getFullKey(key),
-        Body: val
+        Body: Buffer.from(val, val.byteOffset, val.byteLength)
       }).promise()
     } catch (err) {
       if (err.code === 'NoSuchBucket' && this.createIfMissing) {
@@ -81,7 +81,7 @@ class S3Datastore extends Adapter {
    * Read from s3.
    *
    * @param {Key} key
-   * @returns {Promise<Buffer>}
+   * @returns {Promise<Uint8Array>}
    */
   async get (key) {
     try {
@@ -89,8 +89,16 @@ class S3Datastore extends Adapter {
         Key: this._getFullKey(key)
       }).promise()
 
-      // If a body was returned, ensure it's a Buffer
-      return data.Body ? Buffer.from(data.Body) : null
+      // If a body was returned, ensure it's a Uint8Array
+      if (ArrayBuffer.isView(data.Body)) {
+        if (data.Body instanceof Uint8Array) {
+          return data.Body
+        }
+
+        return Uint8Array.from(data.Body, data.Body.byteOffset, data.Body.byteLength)
+      }
+
+      return data.Body || null
     } catch (err) {
       if (err.statusCode === 404) {
         throw Errors.notFoundError(err)
@@ -205,13 +213,21 @@ class S3Datastore extends Adapter {
     }
 
     for await (const key of it) {
-      const res = { key }
-      if (values) {
-        // Fetch the object Buffer from s3
-        res.value = await this.get(key)
-      }
+      try {
+        const res = { key }
 
-      yield res
+        if (values) {
+          // Fetch the object Buffer from s3
+          res.value = await this.get(key)
+        }
+
+        yield res
+      } catch (err) {
+        // key was deleted while we are iterating over the results
+        if (err.statusCode !== 404) {
+          throw err
+        }
+      }
     }
   }
 
@@ -227,7 +243,7 @@ class S3Datastore extends Adapter {
       }).promise()
     } catch (err) {
       if (err.statusCode === 404) {
-        return this.put(new Key('/', false), Buffer.from(''))
+        return this.put(new Key('/', false), Uint8Array.from(''))
       }
 
       throw Errors.dbOpenFailedError(err)

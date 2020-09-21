@@ -49,6 +49,19 @@ describe('S3Datastore', () => {
       return store.put(new Key('/z/key'), Buffer.from('test data'))
     })
 
+    it('should turn Uint8Arrays into Buffers', () => {
+      const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
+      const store = new S3Store('.ipfs/datastore', { s3 })
+
+      standin.replace(s3, 'upload', function (stand, params) {
+        expect(Buffer.isBuffer(params.Body)).to.be.true()
+        stand.restore()
+        return s3Resolve(null)
+      })
+
+      return store.put(new Key('/z/key'), new TextEncoder().encode('test data'))
+    })
+
     it('should create the bucket when missing if createIfMissing is true', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: true })
