@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>datastore-s3 2.0.0 | Documentation</title>
+  <title>datastore-s3 3.0.0 | Documentation</title>
   <meta name='description' content='IPFS datastore implementation backed by s3'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>datastore-s3</h3>
-          <div class='mb1'><code>2.0.0</code></div>
+          <div class='mb1'><code>3.0.0</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -127,7 +127,7 @@
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L21-L236'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L21-L252'>
       <span>src/index.js</span>
       </a>
     
@@ -209,7 +209,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L53-L56'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L53-L56'>
       <span>src/index.js</span>
       </a>
     
@@ -288,7 +288,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L65-L78'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L65-L78'>
       <span>src/index.js</span>
       </a>
     
@@ -297,7 +297,7 @@ to the file system as is.</p>
 
   <p>Store the given value under the key.</p>
 
-    <div class='pre p1 fill-light mt0'>put(key: Key, val: <a href="https://nodejs.org/api/buffer.html">Buffer</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></div>
+    <div class='pre p1 fill-light mt0'>put(key: Key, val: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></div>
   
   
 
@@ -322,7 +322,7 @@ to the file system as is.</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>val</span> <code class='quiet'>(<a href="https://nodejs.org/api/buffer.html">Buffer</a>)</code>
+            <span class='code bold'>val</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
 	    
           </div>
           
@@ -375,7 +375,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L86-L100'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L86-L108'>
       <span>src/index.js</span>
       </a>
     
@@ -384,7 +384,7 @@ to the file system as is.</p>
 
   <p>Read from s3.</p>
 
-    <div class='pre p1 fill-light mt0'>get(key: Key): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://nodejs.org/api/buffer.html">Buffer</a>></div>
+    <div class='pre p1 fill-light mt0'>get(key: Key): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>></div>
   
   
 
@@ -415,7 +415,7 @@ to the file system as is.</p>
   
     
       <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://nodejs.org/api/buffer.html">Buffer</a>></code>:
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>></code>:
         
 
       
@@ -454,7 +454,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L108-L120'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L116-L128'>
       <span>src/index.js</span>
       </a>
     
@@ -533,7 +533,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L128-L136'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L136-L144'>
       <span>src/index.js</span>
       </a>
     
@@ -612,7 +612,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L143-L159'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L151-L167'>
       <span>src/index.js</span>
       </a>
     
@@ -678,7 +678,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L166-L187'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L174-L195'>
       <span>src/index.js</span>
       </a>
     
@@ -757,7 +757,7 @@ to the file system as is.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/index.js#L223-L235'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/index.js#L239-L251'>
       <span>src/index.js</span>
       </a>
     
@@ -831,7 +831,7 @@ to the file system as is.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/685fa91fe850c081211b203e5bc185865b6d7fa9/src/s3-repo.js#L23-L67'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/ipfs/js-datastore-s3/blob/5aac8e49a103df62bbd50b132e34d90e5232eb43/src/s3-repo.js#L23-L70'>
       <span>src/s3-repo.js</span>
       </a>
     
