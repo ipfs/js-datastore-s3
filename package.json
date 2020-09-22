@@ -49,7 +49,7 @@
   },
   "peerDependencies": {
     "aws-sdk": "2.x",
-    "ipfs-repo": "^3.0.2"
+    "ipfs-repo": "^6.0.3"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",
