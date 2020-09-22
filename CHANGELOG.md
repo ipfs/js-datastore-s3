@@ -1,3 +1,24 @@
+<a name="3.0.0"></a>
+# [3.0.0](https://github.com/ipfs/js-datastore-s3/compare/v2.0.0...v3.0.0) (2020-09-22)
+
+
+### Bug Fixes
+
+* convert input to buffers before passing to aws-sdk ([#30](https://github.com/ipfs/js-datastore-s3/issues/30)) ([b844c63](https://github.com/ipfs/js-datastore-s3/commit/b844c63))
+
+
+### BREAKING CHANGES
+
+* - Returns Uint8Arrays only where before it was node Buffers
+
+* chore: configure pin store
+
+* docs: update example
+
+Co-authored-by: Jacob Heun <jacobheun@gmail.com>
+
+
+
 <a name="2.0.0"></a>
 # [2.0.0](https://github.com/ipfs/js-datastore-s3/compare/v1.0.0...v2.0.0) (2020-06-19)
 
