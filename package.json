@@ -35,21 +35,23 @@
   },
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
-    "buffer": "^5.6.0",
-    "datastore-core": "^2.0.0",
-    "interface-datastore": "^2.0.0"
+    "buffer": "^6.0.3",
+    "datastore-core": "^3.0.0",
+    "interface-datastore": "^3.0.5"
   },
   "devDependencies": {
-    "aegir": "^26.0.0",
+    "aegir": "^33.0.0",
+    "assert": "^2.0.0",
     "aws-sdk": "^2.579.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
-    "ipfs-repo": "^6.0.3",
-    "stand-in": "^4.2.0"
+    "ipfs-repo": "9.0.0",
+    "stand-in": "^4.2.0",
+    "util": "^0.12.3"
   },
   "peerDependencies": {
     "aws-sdk": "2.x",
-    "ipfs-repo": "^6.0.3"
+    "ipfs-repo": "^9.0.0"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",
