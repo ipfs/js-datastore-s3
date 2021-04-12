@@ -1,3 +1,7 @@
+# [4.0.0](https://github.com/ipfs/js-datastore-s3/compare/v3.0.0...v4.0.0) (2021-04-12)
+
+
+
 <a name="3.0.0"></a>
 # [3.0.0](https://github.com/ipfs/js-datastore-s3/compare/v2.0.0...v3.0.0) (2020-09-22)
 
