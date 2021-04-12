@@ -1,5 +1,12 @@
 language: node_js
 cache: npm
+dist: bionic
+
+branches:
+  only:
+  - master
+  - /^release\/.*$/
+
 stages:
   - check
   - test
@@ -14,7 +21,7 @@ os:
   - osx
   - windows
 
-script: npx nyc -s npm run test:node -- --bail
+script: npx aegir test -t node --cov --bail
 after_success: npx nyc report --reporter=text-lcov > coverage.lcov && npx codecov
 
 jobs:
@@ -34,8 +41,7 @@ jobs:
       name: firefox
       addons:
         firefox: latest
-      script: npx aegir test -t browser -- --browsers FirefoxHeadless
+      script: npx aegir test -t browser -- --browser firefox
 
 notifications:
   email: false
-
