@@ -20,6 +20,7 @@ const s3Reject = (err) => ({ promise: () => Promise.reject(err) })
 
 /**
  * Mocks out the s3 calls made by datastore-s3
+ *
  * @param {S3Instance} s3
  * @returns {void}
  */

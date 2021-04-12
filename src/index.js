@@ -47,8 +47,9 @@ class S3Datastore extends Adapter {
 
   /**
    * Returns the full key which includes the path to the ipfs store
+   *
    * @param {Key} key
-   * @returns {String}
+   * @returns {string}
    */
   _getFullKey (key) {
     // Avoid absolute paths with s3
@@ -168,6 +169,7 @@ class S3Datastore extends Adapter {
 
   /**
    * Recursively fetches all keys from s3
+   *
    * @param {Object} params
    * @returns {Iterator<Key>}
    */
@@ -184,7 +186,7 @@ class S3Datastore extends Adapter {
       yield new Key(d.Key.slice(this.path.length), false)
     }
 
-    // If we didnt get all records, recursively query
+    // If we didn't get all records, recursively query
     if (data.isTruncated) {
       // If NextMarker is absent, use the key from the last result
       params.StartAfter = data.Contents[data.Contents.length - 1].Key
@@ -242,13 +244,13 @@ class S3Datastore extends Adapter {
         Key: this.path
       }).promise()
     } catch (err) {
-      if (err.statusCode === 404) {
-        return this.put(new Key('/', false), Uint8Array.from(''))
+      if (err.statusCode !== 404) {
+        throw Errors.dbOpenFailedError(err)
       }
-
-      throw Errors.dbOpenFailedError(err)
     }
   }
+
+  close () {}
 }
 
 module.exports = S3Datastore
