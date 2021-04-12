@@ -15,6 +15,7 @@ const notALock = {
 
 /**
  * A convenience method for creating an S3 backed IPFS repo
+ *
  * @param {Object} S3Store
  * @param {Object} options
  * @param {Object} s3Options

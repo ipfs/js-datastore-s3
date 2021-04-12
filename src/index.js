@@ -47,8 +47,9 @@ class S3Datastore extends Adapter {
 
   /**
    * Returns the full key which includes the path to the ipfs store
+   *
    * @param {Key} key
-   * @returns {String}
+   * @returns {string}
    */
   _getFullKey (key) {
     // Avoid absolute paths with s3
@@ -168,6 +169,7 @@ class S3Datastore extends Adapter {
 
   /**
    * Recursively fetches all keys from s3
+   *
    * @param {Object} params
    * @returns {Iterator<Key>}
    */
