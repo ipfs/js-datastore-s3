@@ -13,7 +13,6 @@ const S3 = require('aws-sdk').S3
 const S3Mock = require('./utils/s3-mock')
 const { s3Resolve, s3Reject, S3Error } = S3Mock
 const S3Store = require('../src')
-const { createRepo } = require('../src')
 
 describe('S3Datastore', () => {
   describe('construction', () => {
@@ -199,20 +198,6 @@ describe('S3Datastore', () => {
       } catch (err) {
         expect(err.code).to.equal('ERR_DB_OPEN_FAILED')
       }
-    })
-  })
-
-  describe('createRepo', () => {
-    it('should be able to create a repo', () => {
-      const path = '.ipfs'
-      const repo = createRepo({
-        path
-      }, {
-        bucket: 'my-ipfs-bucket'
-      })
-
-      expect(repo).to.exist()
-      expect(repo.path).to.eql(path)
     })
   })
 

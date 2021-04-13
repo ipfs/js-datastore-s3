@@ -1,7 +1,6 @@
 'use strict'
 
 const { Buffer } = require('buffer')
-
 const {
   Adapter,
   Key,
@@ -10,7 +9,6 @@ const {
     filter
   }
 } = require('interface-datastore')
-const createRepo = require('./s3-repo')
 
 /**
  * A datastore backed by the file system.
@@ -254,6 +252,3 @@ class S3Datastore extends Adapter {
 }
 
 module.exports = S3Datastore
-module.exports.createRepo = (...args) => {
-  return createRepo(S3Datastore, ...args)
-}

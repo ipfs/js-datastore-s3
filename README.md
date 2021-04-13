@@ -14,10 +14,15 @@
 
 ## Table of Contents
 
-- [Install](#install)
-- [Usage](#usage)
-- [Contribute](#contribute)
-- [License](#license)
+- [js-datastore-s3](#js-datastore-s3)
+  - [Lead Maintainer](#lead-maintainer)
+  - [Table of Contents](#table-of-contents)
+  - [Install](#install)
+  - [Usage](#usage)
+    - [Create a Repo](#create-a-repo)
+    - [Examples](#examples)
+  - [Contribute](#contribute)
+  - [License](#license)
 
 ## Install
 
@@ -39,7 +44,8 @@ const store = new S3Store('.ipfs/datastore', {
 ```
 
 ### Create a Repo
-You can quickly create an S3 backed repo using the `createRepo` convenience function.
+
+See [examples/full-s3-repo](./examples/full-s3-repo) for how to quickly create an S3 backed repo using the `createRepo` convenience function.
 
 ```js
 const IPFS = require('ipfs')
