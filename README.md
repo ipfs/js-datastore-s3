@@ -1,4 +1,4 @@
-# js-datastore-s3
+# js-datastore-s3 <!-- omit in toc -->
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](https://protocol.ai/)
 [![](https://img.shields.io/badge/project-IPFS-blue.svg?style=flat-square)](http://ipfs.io/)
@@ -9,20 +9,17 @@
 
 > Datastore implementation backed by s3.
 
-## Lead Maintainer
+## Lead Maintainer <!-- omit in toc -->
 [Jacob Heun](https://github.com/jacobheun)
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
-- [js-datastore-s3](#js-datastore-s3)
-  - [Lead Maintainer](#lead-maintainer)
-  - [Table of Contents](#table-of-contents)
-  - [Install](#install)
-  - [Usage](#usage)
-    - [Create a Repo](#create-a-repo)
-    - [Examples](#examples)
-  - [Contribute](#contribute)
-  - [License](#license)
+- [Install](#install)
+- [Usage](#usage)
+  - [Create a Repo](#create-a-repo)
+  - [Examples](#examples)
+- [Contribute](#contribute)
+- [License](#license)
 
 ## Install
 
