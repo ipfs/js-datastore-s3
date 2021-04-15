@@ -7,7 +7,6 @@ const {
   Key,
   Errors
 } = require('interface-datastore')
-const createRepo = require('./s3-repo')
 
 /**
  * @typedef {import('interface-datastore').Pair} Pair
@@ -268,6 +267,3 @@ class S3Datastore extends Adapter {
 }
 
 module.exports = S3Datastore
-module.exports.createRepo = (...args) => {
-  return createRepo(S3Datastore, ...args)
-}

@@ -1,8 +1,8 @@
 'use strict'
 
 const IPFS = require('ipfs')
-const { createRepo } = require('datastore-s3')
 const toBuffer = require('it-to-buffer')
+const createRepo = require('./create-s3-repo')
 
 ;(async () => {
   // Create the repo

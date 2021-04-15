@@ -46,13 +46,8 @@
     "aws-sdk": "^2.579.0",
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
-    "ipfs-repo": "9.0.0",
     "stand-in": "^4.2.0",
     "util": "^0.12.3"
-  },
-  "peerDependencies": {
-    "aws-sdk": "2.x",
-    "ipfs-repo": "^9.0.0"
   },
   "contributors": [
     "Jacob Heun <jacobheun@gmail.com>",

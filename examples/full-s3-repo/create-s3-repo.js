@@ -44,8 +44,7 @@ const createRepo = (S3Store, options, s3Options) => {
       accessKeyId,
       secretAccessKey
     }),
-    createIfMissing,
-    sharding: true
+    createIfMissing
   }
 
   // If no lock is given, create a mock lock
@@ -60,11 +59,26 @@ const createRepo = (S3Store, options, s3Options) => {
       pins: S3Store
     },
     storageBackendOptions: {
-      root: storeConfig,
-      blocks: storeConfig,
-      keys: storeConfig,
-      datastore: storeConfig,
-      pins: storeConfig
+      root: {
+        ...storeConfig,
+        sharding: false
+      },
+      blocks: {
+        ...storeConfig,
+        sharding: true
+      },
+      keys: {
+        ...storeConfig,
+        sharding: false
+      },
+      datastore: {
+        ...storeConfig,
+        sharding: false
+      },
+      pins: {
+        ...storeConfig,
+        sharding: true
+      }
     },
     lock: lock
   })
