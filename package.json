@@ -36,8 +36,9 @@
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
     "buffer": "^6.0.3",
-    "datastore-core": "^3.0.0",
-    "interface-datastore": "^3.0.5"
+    "datastore-core": "^4.0.0",
+    "interface-datastore": "^4.0.0",
+    "it-filter": "^1.0.2"
   },
   "devDependencies": {
     "aegir": "^33.0.0",
