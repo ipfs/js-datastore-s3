@@ -36,8 +36,8 @@
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
   "dependencies": {
     "buffer": "^6.0.3",
-    "datastore-core": "ipfs/js-datastore-core#feat/split-query-into-query-and-query-keys",
-    "interface-datastore": "ipfs/interface-datastore#feat/split-query-into-query-and-query-keys",
+    "datastore-core": "^4.0.0",
+    "interface-datastore": "^4.0.0",
     "it-filter": "^1.0.2"
   },
   "devDependencies": {
