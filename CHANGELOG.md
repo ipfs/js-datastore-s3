@@ -1,3 +1,12 @@
+# [5.0.0](https://github.com/ipfs/js-datastore-s3/compare/v4.0.0...v5.0.0) (2021-04-15)
+
+
+### Features
+
+* split .query into .query and .queryKeys ([#34](https://github.com/ipfs/js-datastore-s3/issues/34)) ([29423d1](https://github.com/ipfs/js-datastore-s3/commit/29423d13acc4ca137f9708578fe50764b33e0970))
+
+
+
 # [4.0.0](https://github.com/ipfs/js-datastore-s3/compare/v3.0.0...v4.0.0) (2021-04-12)
 
 
