@@ -1,14 +1,19 @@
 'use strict'
 
 const { Buffer } = require('buffer')
+const filter = require('it-filter')
 const {
   Adapter,
   Key,
-  Errors,
-  utils: {
-    filter
-  }
+  Errors
 } = require('interface-datastore')
+
+/**
+ * @typedef {import('interface-datastore').Pair} Pair
+ * @typedef {import('interface-datastore').Query} Query
+ * @typedef {import('interface-datastore').KeyQuery} KeyQuery
+ * @typedef {import('interface-datastore').Options} Options
+ */
 
 /**
  * A datastore backed by the file system.
@@ -169,14 +174,19 @@ class S3Datastore extends Adapter {
    * Recursively fetches all keys from s3
    *
    * @param {Object} params
-   * @returns {Iterator<Key>}
+   * @param {Options} [options]
+   * @returns {AsyncIterator<Key>}
    */
-  async * _listKeys (params) {
+  async * _listKeys (params, options) {
     let data
     try {
       data = await this.opts.s3.listObjectsV2(params).promise()
     } catch (err) {
       throw new Error(err.code)
+    }
+
+    if (options && options.signal && options.signal.aborted) {
+      return
     }
 
     for (const d of data.Contents) {
@@ -194,31 +204,17 @@ class S3Datastore extends Adapter {
     }
   }
 
+  /**
+   * @param {Query} q
+   * @param {Options} [options]
+   */
   async * _all (q, options) {
-    const prefix = [this.path, q.prefix || ''].join('/').replace(/\/\/+/g, '/')
-
-    let values = true
-    if (q.keysOnly != null) {
-      values = !q.keysOnly
-    }
-
-    // Get all the keys via list object, recursively as needed
-    const params = {
-      Prefix: prefix
-    }
-    let it = this._listKeys(params)
-
-    if (q.prefix != null) {
-      it = filter(it, k => k.toString().startsWith(q.prefix))
-    }
-
-    for await (const key of it) {
+    for await (const key of this._allKeys({ prefix: q.prefix }, options)) {
       try {
-        const res = { key }
-
-        if (values) {
-          // Fetch the object Buffer from s3
-          res.value = await this.get(key)
+        /** @type {Pair} */
+        const res = {
+          key,
+          value: await this.get(key)
         }
 
         yield res
@@ -229,6 +225,25 @@ class S3Datastore extends Adapter {
         }
       }
     }
+  }
+
+  /**
+   * @param {KeyQuery} q
+   * @param {Options} [options]
+   */
+  async * _allKeys (q, options) {
+    const prefix = [this.path, q.prefix || ''].join('/').replace(/\/\/+/g, '/')
+
+    // Get all the keys via list object, recursively as needed
+    let it = this._listKeys({
+      Prefix: prefix
+    }, options)
+
+    if (q.prefix != null) {
+      it = filter(it, k => k.toString().startsWith(q.prefix))
+    }
+
+    yield * it
   }
 
   /**
