@@ -1,8 +1,6 @@
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const standin = require('stand-in')
 
 const { Buffer } = require('buffer')

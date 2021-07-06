@@ -1,9 +1,7 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 
 const { Buffer } = require('buffer')
 const standin = require('stand-in')
@@ -202,7 +200,7 @@ describe('S3Datastore', () => {
   })
 
   describe('interface-datastore', () => {
-    require('interface-datastore/src/tests')({
+    require('interface-datastore-tests')({
       setup () {
         const s3 = new S3({
           params: { Bucket: 'my-ipfs-bucket' }
