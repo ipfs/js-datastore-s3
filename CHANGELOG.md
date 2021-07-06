@@ -1,3 +1,22 @@
+# [6.0.0](https://github.com/ipfs/js-datastore-s3/compare/v4.0.0...v6.0.0) (2021-07-06)
+
+
+### chore
+
+* update deps ([be4fec6](https://github.com/ipfs/js-datastore-s3/commit/be4fec68ba1854acab5d2eec24f2719f685546fd))
+
+
+### Features
+
+* split .query into .query and .queryKeys ([#34](https://github.com/ipfs/js-datastore-s3/issues/34)) ([29423d1](https://github.com/ipfs/js-datastore-s3/commit/29423d13acc4ca137f9708578fe50764b33e0970))
+
+
+### BREAKING CHANGES
+
+* uses new interface-datastore types
+
+
+
 # [5.0.0](https://github.com/ipfs/js-datastore-s3/compare/v4.0.0...v5.0.0) (2021-04-15)
 
 
