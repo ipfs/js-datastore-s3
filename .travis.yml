@@ -29,6 +29,7 @@ jobs:
     - stage: check
       script:
         - npx aegir dep-check
+        - cd examples/full-s3-repo && npm i && cd ../../
         - npm run lint
 
     - stage: test
