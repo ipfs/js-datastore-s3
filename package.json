@@ -4,6 +4,7 @@
   "description": "IPFS datastore implementation backed by s3",
   "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
+  "types": "dist/src/index.d.ts",
   "files": [
     "dist",
     "src"
