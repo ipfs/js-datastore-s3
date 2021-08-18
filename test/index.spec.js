@@ -4,7 +4,7 @@
 const { expect } = require('aegir/utils/chai')
 
 const { Buffer } = require('buffer')
-const standin = require('stand-in')
+const sinon = require('sinon')
 const Key = require('interface-datastore').Key
 const S3 = require('aws-sdk').S3
 
@@ -37,9 +37,8 @@ describe('S3Datastore', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'upload', function (stand, params) {
+      sinon.replace(s3, 'upload', (params) => {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
-        stand.restore()
         return s3Resolve(null)
       })
 
@@ -50,9 +49,8 @@ describe('S3Datastore', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'upload', function (stand, params) {
+      sinon.replace(s3, 'upload', (params) => {
         expect(Buffer.isBuffer(params.Body)).to.be.true()
-        stand.restore()
         return s3Resolve(null)
       })
 
@@ -68,17 +66,15 @@ describe('S3Datastore', () => {
       // 3. upload is then called a second time and it passes
 
       let bucketCreated = false
-      standin.replace(s3, 'upload', (stand, params) => {
+      sinon.replace(s3, 'upload', (params) => {
         if (!bucketCreated) {
           return s3Reject(new S3Error('NoSuchBucket'))
         }
-        stand.restore()
         return s3Resolve(null)
       })
 
-      standin.replace(s3, 'createBucket', (stand, params) => {
+      sinon.replace(s3, 'createBucket', (params) => {
         bucketCreated = true
-        stand.restore()
         return s3Resolve()
       })
 
@@ -90,17 +86,15 @@ describe('S3Datastore', () => {
       const store = new S3Store('.ipfs/datastore', { s3, createIfMissing: false })
 
       let bucketCreated = false
-      standin.replace(s3, 'upload', (stand, params) => {
+      sinon.replace(s3, 'upload', (params) => {
         if (!bucketCreated) {
           return s3Reject(new S3Error('NoSuchBucket'))
         }
-        stand.restore()
         return s3Resolve(null)
       })
 
-      standin.replace(s3, 'createBucket', (stand, params) => {
+      sinon.replace(s3, 'createBucket', (params) => {
         bucketCreated = true
-        stand.restore()
         return s3Resolve()
       })
 
@@ -116,9 +110,8 @@ describe('S3Datastore', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'upload', function (stand, params) {
+      sinon.replace(s3, 'upload', (params) => {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
-        stand.restore()
         return s3Reject(new Error('bad things happened'))
       })
 
@@ -135,22 +128,20 @@ describe('S3Datastore', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'getObject', function (stand, params) {
-        expect(params.Key).to.equal('.ipfs/datastore/z/key')
-        stand.restore()
+      sinon.replace(s3, 'getObject', (params) => {
+        expect(params).to.have.property('Key', '.ipfs/datastore/z/key')
         return s3Resolve({ Body: Buffer.from('test') })
       })
 
       return store.get(new Key('/z/key'))
     })
 
-    it('should return a standard not found error code if the key isnt found', async () => {
+    it('should return a standard not found error code if the key isn\'t found', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'getObject', function (stand, params) {
-        expect(params.Key).to.equal('.ipfs/datastore/z/key')
-        stand.restore()
+      sinon.replace(s3, 'getObject', (params) => {
+        expect(params).to.have.property('Key', '.ipfs/datastore/z/key')
         return s3Reject(new S3Error('NotFound', 404))
       })
 
@@ -167,9 +158,8 @@ describe('S3Datastore', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'deleteObject', function (stand, params) {
-        expect(params.Key).to.equal('.ipfs/datastore/z/key')
-        stand.restore()
+      sinon.replace(s3, 'deleteObject', (params) => {
+        expect(params).to.have.property('Key', '.ipfs/datastore/z/key')
         return s3Reject(new Error('bad things'))
       })
 
@@ -186,8 +176,7 @@ describe('S3Datastore', () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
       const store = new S3Store('.ipfs/datastore', { s3 })
 
-      standin.replace(s3, 'headObject', function (stand, _) {
-        stand.restore()
+      sinon.replace(s3, 'headObject', (_) => {
         return s3Reject(new Error('unknown'))
       })
 

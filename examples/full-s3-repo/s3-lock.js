@@ -1,15 +1,38 @@
 'use strict'
 
 const PATH = require('path')
+const { fromString: uint8ArrayFromString } = require('uint8arrays')
 
 /**
  * Uses an object in an S3 bucket as a lock to signal that an IPFS repo is in use.
  * When the object exists, the repo is in use. You would normally use this to make
  * sure multiple IPFS nodes don’t use the same S3 bucket as a datastore at the same time.
  */
+
+/**
+ * @typedef {import('ipfs-repo').LockCloser} LockCloser
+ */
+
 class S3Lock {
-  constructor (s3Datastore) {
-    this.s3 = s3Datastore
+  /**
+   * @param {import('aws-sdk/clients/s3')} s3
+   */
+  constructor (s3) {
+    this.s3 = s3
+
+    const {
+      config: {
+        params: {
+          Bucket
+        } = {}
+      } = {}
+    } = s3
+
+    if (typeof Bucket !== 'string') {
+      throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
+    }
+
+    this.bucket = Bucket
   }
 
   /**
@@ -24,7 +47,7 @@ class S3Lock {
   }
 
   /**
-   * Creates the lock. This can be overriden to customize where the lock should be created
+   * Creates the lock. This can be overridden to customize where the lock should be created
    *
    * @param {string} dir
    * @returns {Promise<LockCloser>}
@@ -39,11 +62,16 @@ class S3Lock {
       err = e
     }
     if (err || alreadyLocked) {
-      return callback(new Error('The repo is already locked'))
+      throw new Error('The repo is already locked')
     }
 
     // There's no lock yet, create one
-    const data = await this.s3.put(lockPath, Buffer.from('')).promise()
+    await this.s3.putObject({
+      Bucket: this.bucket,
+      Key: lockPath,
+      Body: uint8ArrayFromString('')
+    }).promise()
+
     return this.getCloser(lockPath)
   }
 
@@ -56,14 +84,15 @@ class S3Lock {
   getCloser (lockPath) {
     const closer = {
       /**
-       * Removes the lock. This can be overriden to customize how the lock is removed. This
+       * Removes the lock. This can be overridden to customize how the lock is removed. This
        * is important for removing any created locks.
-       *
-       * @returns {Promise}
        */
-      async close: () => {
+      close: async () => {
         try {
-          await this.s3.delete(lockPath).promise()
+          await this.s3.deleteObject({
+            Bucket: this.bucket,
+            Key: lockPath
+          }).promise()
         } catch (err) {
           if (err.statusCode !== 404) {
             throw err
@@ -72,6 +101,9 @@ class S3Lock {
       }
     }
 
+    /**
+     * @param {Error} [err]
+     */
     const cleanup = async (err) => {
       if (err instanceof Error) {
         console.log('\nAn Uncaught Exception Occurred:\n', err)
@@ -107,7 +139,10 @@ class S3Lock {
    */
   async locked (dir) {
     try {
-      await this.s3.get(this.getLockfilePath(dir)).promise()
+      await this.s3.getObject({
+        Bucket: this.bucket,
+        Key: this.getLockfilePath(dir)
+      }).promise()
     } catch (err) {
       if (err.code === 'ERR_NOT_FOUND') {
         return false

@@ -7,12 +7,15 @@ const {
   Key,
   Errors
 } = require('interface-datastore')
+const { fromString: unint8arrayFromString } = require('uint8arrays')
+const toBuffer = require('it-to-buffer')
 
 /**
  * @typedef {import('interface-datastore').Pair} Pair
  * @typedef {import('interface-datastore').Query} Query
  * @typedef {import('interface-datastore').KeyQuery} KeyQuery
  * @typedef {import('interface-datastore').Options} Options
+ * @typedef {import('interface-datastore').Batch} Batch
  */
 
 /**
@@ -22,6 +25,10 @@ const {
  * to the file system as is.
  */
 class S3Datastore extends Adapter {
+  /**
+   * @param {string} path
+   * @param {import('./types').S3DatastoreOptions} opts
+   */
   constructor (path, opts) {
     super()
 
@@ -64,17 +71,20 @@ class S3Datastore extends Adapter {
    *
    * @param {Key} key
    * @param {Uint8Array} val
-   * @returns {Promise}
+   * @returns {Promise<void>}
    */
   async put (key, val) {
     try {
       await this.opts.s3.upload({
+        Bucket: this.bucket,
         Key: this._getFullKey(key),
         Body: Buffer.from(val, val.byteOffset, val.byteLength)
       }).promise()
     } catch (err) {
       if (err.code === 'NoSuchBucket' && this.createIfMissing) {
-        await this.opts.s3.createBucket({}).promise()
+        await this.opts.s3.createBucket({
+          Bucket: this.bucket
+        }).promise()
         return this.put(key, val)
       }
       throw Errors.dbWriteFailedError(err)
@@ -90,19 +100,31 @@ class S3Datastore extends Adapter {
   async get (key) {
     try {
       const data = await this.opts.s3.getObject({
+        Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
 
-      // If a body was returned, ensure it's a Uint8Array
-      if (ArrayBuffer.isView(data.Body)) {
-        if (data.Body instanceof Uint8Array) {
-          return data.Body
-        }
-
-        return Uint8Array.from(data.Body, data.Body.byteOffset, data.Body.byteLength)
+      if (!data.Body) {
+        throw new Error('Response had no body')
       }
 
-      return data.Body || null
+      // If a body was returned, ensure it's a Uint8Array
+      if (data.Body instanceof Uint8Array) {
+        return data.Body
+      }
+
+      if (typeof data.Body === 'string') {
+        return unint8arrayFromString(data.Body)
+      }
+
+      if (data.Body instanceof Blob) {
+        const buf = await data.Body.arrayBuffer()
+
+        return new Uint8Array(buf, 0, buf.byteLength)
+      }
+
+      // @ts-ignore s3 types define their own Blob as an empty interface
+      return await toBuffer(data.Body)
     } catch (err) {
       if (err.statusCode === 404) {
         throw Errors.notFoundError(err)
@@ -115,11 +137,11 @@ class S3Datastore extends Adapter {
    * Check for the existence of the given key.
    *
    * @param {Key} key
-   * @returns {Promise<bool>}
    */
   async has (key) {
     try {
       await this.opts.s3.headObject({
+        Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
       return true
@@ -135,11 +157,11 @@ class S3Datastore extends Adapter {
    * Delete the record under the given key.
    *
    * @param {Key} key
-   * @returns {Promise}
    */
   async delete (key) {
     try {
       await this.opts.s3.deleteObject({
+        Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
     } catch (err) {
@@ -153,7 +175,9 @@ class S3Datastore extends Adapter {
    * @returns {Batch}
    */
   batch () {
+    /** @type {({ key: Key, value: Uint8Array })[]} */
     const puts = []
+    /** @type {Key[]} */
     const deletes = []
     return {
       put (key, value) {
@@ -162,10 +186,10 @@ class S3Datastore extends Adapter {
       delete (key) {
         deletes.push(key)
       },
-      commit: () => {
+      commit: async () => {
         const putOps = puts.map((p) => this.put(p.key, p.value))
         const delOps = deletes.map((key) => this.delete(key))
-        return Promise.all(putOps.concat(delOps))
+        await Promise.all(putOps.concat(delOps))
       }
     }
   }
@@ -173,34 +197,44 @@ class S3Datastore extends Adapter {
   /**
    * Recursively fetches all keys from s3
    *
-   * @param {Object} params
+   * @param {{ Prefix?: string, StartAfter?: string }} params
    * @param {Options} [options]
-   * @returns {AsyncIterator<Key>}
+   * @returns {AsyncGenerator<Key, void, undefined>}
    */
   async * _listKeys (params, options) {
-    let data
     try {
-      data = await this.opts.s3.listObjectsV2(params).promise()
+      const data = await this.opts.s3.listObjectsV2({
+        Bucket: this.bucket,
+        ...params
+      }).promise()
+
+      if (options && options.signal && options.signal.aborted) {
+        return
+      }
+
+      if (!data || !data.Contents) {
+        throw new Error('Not found')
+      }
+
+      for (const d of data.Contents) {
+        if (!d.Key) {
+          throw new Error('Not found')
+        }
+
+        // Remove the path from the key
+        yield new Key(d.Key.slice(this.path.length), false)
+      }
+
+      // If we didn't get all records, recursively query
+      if (data.IsTruncated) {
+        // If NextMarker is absent, use the key from the last result
+        params.StartAfter = data.Contents[data.Contents.length - 1].Key
+
+        // recursively fetch keys
+        yield * this._listKeys(params)
+      }
     } catch (err) {
       throw new Error(err.code)
-    }
-
-    if (options && options.signal && options.signal.aborted) {
-      return
-    }
-
-    for (const d of data.Contents) {
-      // Remove the path from the key
-      yield new Key(d.Key.slice(this.path.length), false)
-    }
-
-    // If we didn't get all records, recursively query
-    if (data.isTruncated) {
-      // If NextMarker is absent, use the key from the last result
-      params.StartAfter = data.Contents[data.Contents.length - 1].Key
-
-      // recursively fetch keys
-      yield * this._listKeys(params)
     }
   }
 
@@ -230,6 +264,7 @@ class S3Datastore extends Adapter {
   /**
    * @param {KeyQuery} q
    * @param {Options} [options]
+   * @returns {AsyncGenerator<Key, void, undefined>}
    */
   async * _allKeys (q, options) {
     const prefix = [this.path, q.prefix || ''].join('/').replace(/\/\/+/g, '/')
@@ -240,7 +275,7 @@ class S3Datastore extends Adapter {
     }, options)
 
     if (q.prefix != null) {
-      it = filter(it, k => k.toString().startsWith(q.prefix))
+      it = filter(it, k => k.toString().startsWith(`${q.prefix || ''}`))
     }
 
     yield * it
@@ -248,12 +283,11 @@ class S3Datastore extends Adapter {
 
   /**
    * This will check the s3 bucket to ensure access and existence
-   *
-   * @returns {Promise}
    */
   async open () {
     try {
       await this.opts.s3.headObject({
+        Bucket: this.bucket,
         Key: this.path
       }).promise()
     } catch (err) {
@@ -263,7 +297,7 @@ class S3Datastore extends Adapter {
     }
   }
 
-  close () {}
+  async close () {}
 }
 
 module.exports = S3Datastore

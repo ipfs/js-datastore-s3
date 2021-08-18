@@ -10,10 +10,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ipld/dag-cbor": "^6.0.9",
+    "@ipld/dag-pb": "^2.1.9",
     "aws-sdk": "^2.885.0",
+    "blockstore-datastore-adapter": "^1.0.0",
+    "datastore-core": "^5.0.1",
     "datastore-s3": "../../",
-    "ipfs": "^0.54.4",
-    "ipfs-repo": "^9.0.0",
-    "it-to-buffer": "^2.0.0"
+    "ipfs": "^0.58.1",
+    "ipfs-repo": "^11.0.1",
+    "it-to-buffer": "^2.0.0",
+    "multiformats": "^9.4.5"
   }
 }
