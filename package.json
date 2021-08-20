@@ -1,6 +1,6 @@
 {
   "name": "datastore-s3",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "IPFS datastore implementation backed by s3",
   "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
