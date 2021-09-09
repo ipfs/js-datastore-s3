@@ -1,7 +1,7 @@
 'use strict'
 
-const PATH = require('path')
-const { fromString: uint8ArrayFromString } = require('uint8arrays')
+import PATH from 'path'
+import { fromString as uint8ArrayFromString } from 'uint8arrays'
 
 /**
  * Uses an object in an S3 bucket as a lock to signal that an IPFS repo is in use.
@@ -13,7 +13,7 @@ const { fromString: uint8ArrayFromString } = require('uint8arrays')
  * @typedef {import('ipfs-repo').LockCloser} LockCloser
  */
 
-class S3Lock {
+export class S3Lock {
   /**
    * @param {import('aws-sdk/clients/s3')} s3
    */
@@ -153,5 +153,3 @@ class S3Lock {
     return true
   }
 }
-
-module.exports = S3Lock
