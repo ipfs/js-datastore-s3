@@ -1,3 +1,17 @@
+# [8.0.0](https://github.com/ipfs/js-datastore-s3/compare/v7.0.0...v8.0.0) (2021-09-09)
+
+
+### chore
+
+* switch to esm ([#37](https://github.com/ipfs/js-datastore-s3/issues/37)) ([25f4dce](https://github.com/ipfs/js-datastore-s3/commit/25f4dceaf3e6678756b4c93b56a082c0282cc9f6))
+
+
+### BREAKING CHANGES
+
+* only uses named exports
+
+
+
 # [7.0.0](https://github.com/ipfs/js-datastore-s3/compare/v6.0.0...v7.0.0) (2021-08-20)
 
 
