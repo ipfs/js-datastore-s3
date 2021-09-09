@@ -4,20 +4,28 @@
   "description": "IPFS datastore implementation backed by s3",
   "leadMaintainer": "Jacob Heun<jacobheun@gmail.com>",
   "main": "src/index.js",
-  "types": "dist/src/index.d.ts",
+  "type": "module",
+  "types": "types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "*",
+    "!**/*.tsbuildinfo"
   ],
+  "exports": {
+    ".": {
+      "import": "./src/index.js"
+    }
+  },
   "scripts": {
+    "clean": "rimraf dist types",
+    "prepare": "aegir build --no-bundle && cp -R types dist",
     "lint": "aegir ts -p check && aegir lint",
+    "build": "aegir build",
+    "release": "aegir release --target node",
+    "release-minor": "aegir release --type minor --target node",
+    "release-major": "aegir release --type major --target node",
+    "pretest": "aegir build --esm-tests",
     "test": "aegir test",
-    "test:node": "aegir test --target node",
-    "release": "aegir release --target node --docs",
-    "release-minor": "aegir release --type minor --target node --docs",
-    "release-major": "aegir release --type major --target node --docs",
-    "coverage": "nyc --reporter=text --reporter=lcov npm run test:node",
-    "docs": "aegir docs"
+    "dep-check": "aegir dep-check -i rimraf"
   },
   "repository": {
     "type": "git",
@@ -35,10 +43,16 @@
     "url": "https://github.com/ipfs/js-datastore-s3/issues"
   },
   "homepage": "https://github.com/ipfs/js-datastore-s3#readme",
+  "eslintConfig": {
+    "extends": "ipfs",
+    "parserOptions": {
+      "sourceType": "module"
+    }
+  },
   "dependencies": {
     "buffer": "^6.0.3",
-    "datastore-core": "^5.0.0",
-    "interface-datastore": "^5.1.1",
+    "datastore-core": "^6.0.5",
+    "interface-datastore": "^6.0.2",
     "it-filter": "^1.0.2",
     "it-to-buffer": "^2.0.0",
     "uint8arrays": "^3.0.0"
@@ -47,7 +61,7 @@
     "aegir": "^35.0.2",
     "assert": "^2.0.0",
     "aws-sdk": "^2.579.0",
-    "interface-datastore-tests": "^1.0.0",
+    "interface-datastore-tests": "^2.0.3",
     "sinon": "^11.1.2",
     "util": "^0.12.3"
   },

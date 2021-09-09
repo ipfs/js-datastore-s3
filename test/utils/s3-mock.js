@@ -1,11 +1,9 @@
-'use strict'
+import { expect } from 'aegir/utils/chai.js'
+import sinon from 'sinon'
+import { Buffer } from 'buffer'
+import AWS from 'aws-sdk'
 
-const { expect } = require('aegir/utils/chai')
-const sinon = require('sinon')
-const { Buffer } = require('buffer')
-const AWS = require('aws-sdk')
-
-class S3Error extends Error {
+export class S3Error extends Error {
   /**
    * @param {string} message
    * @param {number} [code]
@@ -21,7 +19,7 @@ class S3Error extends Error {
  * @template T
  * @param {T} [res]
  */
-const s3Resolve = (res) => {
+export const s3Resolve = (res) => {
   const request = new AWS.Request(new AWS.Service(), 'op')
 
   sinon.replace(request, 'promise', () => {
@@ -35,7 +33,7 @@ const s3Resolve = (res) => {
  * @template T
  * @param {T} err
  */
-const s3Reject = (err) => {
+export const s3Reject = (err) => {
   const request = new AWS.Request(new AWS.Service(), 'op')
 
   sinon.replace(request, 'promise', () => {
@@ -51,7 +49,7 @@ const s3Reject = (err) => {
  * @param {import('aws-sdk/clients/s3')} s3
  * @returns {void}
  */
-module.exports = function (s3) {
+export function s3Mock (s3) {
   const mocks = {}
   /** @type {Record<string, any>} */
   const storage = {}
@@ -158,7 +156,3 @@ module.exports = function (s3) {
     return s3Resolve({})
   })
 }
-
-module.exports.S3Error = S3Error
-module.exports.s3Resolve = s3Resolve
-module.exports.s3Reject = s3Reject

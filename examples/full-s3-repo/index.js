@@ -1,10 +1,8 @@
-'use strict'
-
-const IPFS = require('ipfs')
-const toBuffer = require('it-to-buffer')
-const createRepo = require('./create-s3-repo')
-const S3 = require('aws-sdk/clients/s3')
-const S3Lock = require('./s3-lock')
+import IPFS from 'ipfs-core'
+import toBuffer from 'it-to-buffer'
+import { createS3Repo } from './create-s3-repo'
+import S3 from 'aws-sdk/clients/s3'
+import { S3Lock } from './s3-lock'
 
 async function main () {
   // Configure S3 as normal
@@ -22,7 +20,7 @@ async function main () {
   const repoLock = new S3Lock(s3)
 
   // Create the repo
-  const s3Repo = createRepo('/', s3, repoLock)
+  const s3Repo = createS3Repo('/', s3, repoLock)
 
   // Create a new IPFS node with our S3 backed Repo
   console.log('Start ipfs')

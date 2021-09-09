@@ -1,14 +1,10 @@
-'use strict'
-
-const { Buffer } = require('buffer')
-const filter = require('it-filter')
-const {
-  Adapter,
-  Key,
-  Errors
-} = require('interface-datastore')
-const { fromString: unint8arrayFromString } = require('uint8arrays')
-const toBuffer = require('it-to-buffer')
+import { Buffer } from 'buffer'
+import filter from 'it-filter'
+import { Key } from 'interface-datastore'
+import { BaseDatastore } from 'datastore-core/base'
+import * as Errors from 'datastore-core/errors'
+import { fromString as unint8arrayFromString } from 'uint8arrays'
+import toBuffer from 'it-to-buffer'
 
 /**
  * @typedef {import('interface-datastore').Pair} Pair
@@ -24,7 +20,7 @@ const toBuffer = require('it-to-buffer')
  * Keys need to be sanitized before use, as they are written
  * to the file system as is.
  */
-class S3Datastore extends Adapter {
+export class S3Datastore extends BaseDatastore {
   /**
    * @param {string} path
    * @param {import('./types').S3DatastoreOptions} opts
@@ -80,7 +76,7 @@ class S3Datastore extends Adapter {
         Key: this._getFullKey(key),
         Body: Buffer.from(val, val.byteOffset, val.byteLength)
       }).promise()
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err.code === 'NoSuchBucket' && this.createIfMissing) {
         await this.opts.s3.createBucket({
           Bucket: this.bucket
@@ -125,7 +121,7 @@ class S3Datastore extends Adapter {
 
       // @ts-ignore s3 types define their own Blob as an empty interface
       return await toBuffer(data.Body)
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err.statusCode === 404) {
         throw Errors.notFoundError(err)
       }
@@ -145,7 +141,7 @@ class S3Datastore extends Adapter {
         Key: this._getFullKey(key)
       }).promise()
       return true
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err.code === 'NotFound') {
         return false
       }
@@ -164,7 +160,7 @@ class S3Datastore extends Adapter {
         Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       throw Errors.dbDeleteFailedError(err)
     }
   }
@@ -233,7 +229,7 @@ class S3Datastore extends Adapter {
         // recursively fetch keys
         yield * this._listKeys(params)
       }
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       throw new Error(err.code)
     }
   }
@@ -252,7 +248,7 @@ class S3Datastore extends Adapter {
         }
 
         yield res
-      } catch (err) {
+      } catch (/** @type {any} */ err) {
         // key was deleted while we are iterating over the results
         if (err.statusCode !== 404) {
           throw err
@@ -290,7 +286,7 @@ class S3Datastore extends Adapter {
         Bucket: this.bucket,
         Key: this.path
       }).promise()
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err.statusCode !== 404) {
         throw Errors.dbOpenFailedError(err)
       }
@@ -299,5 +295,3 @@ class S3Datastore extends Adapter {
 
   async close () {}
 }
-
-module.exports = S3Datastore
