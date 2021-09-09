@@ -1,7 +1,7 @@
 import IPFS from 'ipfs-core'
 import toBuffer from 'it-to-buffer'
 import { createS3Repo } from './create-s3-repo'
-import S3 from 'aws-sdk/clients/s3'
+import S3 from 'aws-sdk/clients/s3.js'
 import { S3Lock } from './s3-lock'
 
 async function main () {

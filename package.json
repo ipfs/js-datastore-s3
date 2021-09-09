@@ -38,7 +38,7 @@
     "datastore",
     "s3"
   ],
-  "license": "MIT",
+  "license": "(Apache-2.0 OR MIT)",
   "bugs": {
     "url": "https://github.com/ipfs/js-datastore-s3/issues"
   },

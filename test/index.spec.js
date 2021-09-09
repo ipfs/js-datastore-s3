@@ -4,7 +4,7 @@ import { expect } from 'aegir/utils/chai.js'
 import { Buffer } from 'buffer'
 import sinon from 'sinon'
 import { Key } from 'interface-datastore'
-import { S3 } from 'aws-sdk'
+import S3 from 'aws-sdk/clients/s3.js'
 import { interfaceDatastoreTests } from 'interface-datastore-tests'
 
 import { s3Mock, s3Resolve, s3Reject, S3Error } from './utils/s3-mock.js'

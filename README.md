@@ -31,7 +31,7 @@ $ npm install datastore-s3
 If the flag `createIfMissing` is not set or is false, then the bucket must be created prior to using datastore-s3. Please see the AWS docs for information on how to configure the S3 instance. A bucket name is required to be set at the s3 instance level, see the below example.
 
 ```js
-import { S3 } from 'aws-sdk'
+import S3 from 'aws-sdk/clients/s3.js'
 import { S3Datastore } from 'datastore-s3'
 
 const s3Instance = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
@@ -56,4 +56,4 @@ Small note: If editing the Readme, please conform to the [standard-readme](https
 
 ## License
 
-MIT 2018 © IPFS
+[Apache-2.0](LICENSE-APACHE) OR [MIT](LICENSE-MIT)
