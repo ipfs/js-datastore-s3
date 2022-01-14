@@ -1,7 +1,7 @@
 Full S3 Repo
 ======
 
-This example leverages the code from https://github.com/ipfs/js-ipfs/tree/master/examples/ipfs-101,
+This example leverages the code from https://github.com/ipfs-examples/js-ipfs-examples/tree/master/examples/ipfs-101,
 but uses an instantiated S3 instance to serve as the entire backend for ipfs.
 
 ## Running
