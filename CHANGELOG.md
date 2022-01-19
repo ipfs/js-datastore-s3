@@ -1,3 +1,15 @@
+## [9.0.0](https://github.com/ipfs/js-datastore-s3/compare/v8.0.0...v9.0.0) (2022-01-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* updates config to use unified ci
+
+### Trivial Changes
+
+* fix IPFS-101 example URL ([#40](https://github.com/ipfs/js-datastore-s3/issues/40)) ([0044df3](https://github.com/ipfs/js-datastore-s3/commit/0044df35dbc6fd2a2b01eaaf9e9432796fd9525e))
+* switch to unified ci ([#41](https://github.com/ipfs/js-datastore-s3/issues/41)) ([a969b40](https://github.com/ipfs/js-datastore-s3/commit/a969b404293ca6122ce8d26c000e36724e8186fd))
+
 # [8.0.0](https://github.com/ipfs/js-datastore-s3/compare/v7.0.0...v8.0.0) (2021-09-09)
 
 
