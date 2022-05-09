@@ -167,7 +167,7 @@
     "assert": "^2.0.0",
     "aws-sdk": "^2.579.0",
     "interface-datastore-tests": "^2.0.3",
-    "sinon": "^12.0.1",
+    "sinon": "^14.0.0",
     "util": "^0.12.3"
   }
 }
