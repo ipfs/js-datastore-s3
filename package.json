@@ -163,7 +163,7 @@
     "uint8arrays": "^3.0.0"
   },
   "devDependencies": {
-    "aegir": "^36.1.3",
+    "aegir": "^37.4.6",
     "assert": "^2.0.0",
     "aws-sdk": "^2.579.0",
     "interface-datastore-tests": "^2.0.3",
