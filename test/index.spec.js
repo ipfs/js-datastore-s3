@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { expect } from 'aegir/utils/chai.js'
+import { expect } from 'aegir/chai'
 import { Buffer } from 'buffer'
 import sinon from 'sinon'
 import { Key } from 'interface-datastore'
