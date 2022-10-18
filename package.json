@@ -161,7 +161,7 @@
     "buffer": "^6.0.3",
     "datastore-core": "^8.0.1",
     "interface-datastore": "^7.0.0",
-    "it-filter": "^1.0.2",
+    "it-filter": "^2.0.0",
     "it-to-buffer": "^3.0.0",
     "uint8arrays": "^3.0.0"
   },
