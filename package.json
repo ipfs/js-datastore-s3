@@ -163,7 +163,7 @@
     "interface-datastore": "^7.0.0",
     "it-filter": "^2.0.0",
     "it-to-buffer": "^3.0.0",
-    "uint8arrays": "^3.0.0"
+    "uint8arrays": "^4.0.2"
   },
   "devDependencies": {
     "aegir": "^37.5.1",
