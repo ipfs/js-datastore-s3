@@ -1,3 +1,13 @@
+## [10.0.1](https://github.com/ipfs/js-datastore-s3/compare/v10.0.0...v10.0.1) (2022-10-18)
+
+
+### Dependencies
+
+* bump it-filter from 1.0.3 to 2.0.0 ([#79](https://github.com/ipfs/js-datastore-s3/issues/79)) ([edb6264](https://github.com/ipfs/js-datastore-s3/commit/edb6264e61c0bcde9e10afb66f80077dca3ad769))
+* bump it-to-buffer from 2.0.2 to 3.0.0 ([#80](https://github.com/ipfs/js-datastore-s3/issues/80)) ([fa9bf96](https://github.com/ipfs/js-datastore-s3/commit/fa9bf963ab0a14bb43d729fd9aecf67e7c9cc437))
+* bump uint8arrays from 3.1.1 to 4.0.2 ([#78](https://github.com/ipfs/js-datastore-s3/issues/78)) ([53af2c6](https://github.com/ipfs/js-datastore-s3/commit/53af2c61cfa72e7e3aa823e6fd41da0c91d99027))
+* bump uint8arrays to 4.0.3 ([40a1444](https://github.com/ipfs/js-datastore-s3/commit/40a1444c37d4f71c73f4bfc8dd5a131691ac4391))
+
 ## [10.0.0](https://github.com/ipfs/js-datastore-s3/compare/v9.0.0...v10.0.0) (2022-08-12)
 
 
