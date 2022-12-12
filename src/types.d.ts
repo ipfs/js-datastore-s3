@@ -1,6 +1,7 @@
-import type S3 from 'aws-sdk/clients/s3'
+import type { S3Client } from 'aws-sdk/client-s3'
 
 export interface S3DatastoreOptions {
-  s3: S3
+  s3: S3Client
+  bucket: string
   createIfMissing?: boolean
 }

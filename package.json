@@ -165,9 +165,11 @@
     "it-to-buffer": "^3.0.0",
     "uint8arrays": "^4.0.2"
   },
+  "peerDependencies": {
+    "@aws-sdk/client-s3": "^3.213.0"
+  },
   "devDependencies": {
     "aegir": "^37.5.1",
-    "aws-sdk": "^2.579.0",
     "interface-datastore-tests": "^3.0.0",
     "sinon": "^14.0.0"
   }

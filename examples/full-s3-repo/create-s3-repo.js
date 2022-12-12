@@ -19,10 +19,11 @@ import * as dagCbor from '@ipld/dag-cbor'
  * @param {import('aws-sdk/clients/s3')} s3
  * @param {import('ipfs-repo').RepoLock} repoLock
  */
-export const createS3Repo = (path, s3, repoLock) => {
+export const createS3Repo = (path, s3, bucket, repoLock) => {
   const storeConfig = {
     s3,
-    createIfMissing: true
+    bucket,
+    createIfMissing: false
   }
 
   /**
@@ -52,30 +53,35 @@ export const createS3Repo = (path, s3, repoLock) => {
     throw new Error(`Unsupported codec ${codeOrName}`)
   }
 
-  return createRepo(path, loadCodec, {
-    root: new ShardingDatastore(
-      new S3Datastore(path, storeConfig),
-      new NextToLast(2)
-    ),
-    blocks: new BlockstoreDatastoreAdapter(
-      new ShardingDatastore(
-        new S3Datastore(`${path}blocks`, storeConfig),
+  return createRepo(
+    path,
+    loadCodec,
+    {
+      root: new ShardingDatastore(
+        new S3Datastore(path, storeConfig),
+        new NextToLast(2)
+      ),
+      blocks: new BlockstoreDatastoreAdapter(
+        new ShardingDatastore(
+          new S3Datastore(`${path}blocks`, storeConfig),
+          new NextToLast(2)
+        )
+      ),
+      datastore: new ShardingDatastore(
+        new S3Datastore(`${path}datastore`, storeConfig),
+        new NextToLast(2)
+      ),
+      keys: new ShardingDatastore(
+        new S3Datastore(`${path}keys`, storeConfig),
+        new NextToLast(2)
+      ),
+      pins: new ShardingDatastore(
+        new S3Datastore(`${path}pins`, storeConfig),
         new NextToLast(2)
       )
-    ),
-    datastore: new ShardingDatastore(
-      new S3Datastore(`${path}datastore`, storeConfig),
-      new NextToLast(2)
-    ),
-    keys: new ShardingDatastore(
-      new S3Datastore(`${path}keys`, storeConfig),
-      new NextToLast(2)
-    ),
-    pins: new ShardingDatastore(
-      new S3Datastore(`${path}pins`, storeConfig),
-      new NextToLast(2)
-    )
-  }, {
-    repoLock
-  })
+    },
+    {
+      repoLock
+    }
+  )
 }

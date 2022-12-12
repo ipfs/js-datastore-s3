@@ -4,12 +4,11 @@ import { createS3Repo } from './create-s3-repo'
 import S3 from 'aws-sdk/clients/s3.js'
 import { S3Lock } from './s3-lock'
 
-async function main () {
+const bucket = 'my-bucket'
+
+async function main() {
   // Configure S3 as normal
   const s3 = new S3({
-    params: {
-      Bucket: 'my-bucket'
-    },
     accessKeyId: 'myaccesskey',
     secretAccessKey: 'mysecretkey'
   })
@@ -17,10 +16,10 @@ async function main () {
   // Prevents concurrent access to the repo, you can also use the memory or fs locks
   // bundled with ipfs-repo though they will not prevent processes running on two
   // machines accessing the same repo in parallel
-  const repoLock = new S3Lock(s3)
+  const repoLock = new S3Lock(s3, bucket)
 
   // Create the repo
-  const s3Repo = createS3Repo('/', s3, repoLock)
+  const s3Repo = createS3Repo('/', s3, bucket, repoLock)
 
   // Create a new IPFS node with our S3 backed Repo
   console.log('Start ipfs')
@@ -58,8 +57,7 @@ async function main () {
   await node.stop()
 }
 
-main()
-  .catch(err => {
-    console.error(err)
-    process.exit(1)
-  })
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
