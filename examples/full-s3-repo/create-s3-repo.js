@@ -16,7 +16,7 @@ import * as dagCbor from '@ipld/dag-cbor'
  * A convenience method for creating an S3 backed IPFS repo
  *
  * @param {string} path
- * @param {import('aws-sdk/clients/s3')} s3
+ * @param {import('@aws-sdk/client-s3').S3Client} s3
  * @param {import('ipfs-repo').RepoLock} repoLock
  */
 export const createS3Repo = (path, s3, bucket, repoLock) => {

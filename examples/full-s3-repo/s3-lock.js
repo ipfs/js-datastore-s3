@@ -17,7 +17,7 @@ import {
 
 export class S3Lock {
   /**
-   * @param {import('aws-sdk/clients/s3')} s3
+   * @param {import('@aws-sdk/client-s3').S3Client} s3
    */
   constructor(s3, bucket) {
     this.s3 = s3
