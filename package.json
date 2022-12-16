@@ -169,6 +169,6 @@
     "aegir": "^37.5.1",
     "aws-sdk": "^2.579.0",
     "interface-datastore-tests": "^3.0.0",
-    "sinon": "^14.0.0"
+    "sinon": "^15.0.1"
   }
 }
