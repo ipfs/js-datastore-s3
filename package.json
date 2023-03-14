@@ -159,7 +159,7 @@
   },
   "dependencies": {
     "buffer": "^6.0.3",
-    "datastore-core": "^8.0.1",
+    "datastore-core": "^9.0.2",
     "interface-datastore": "^7.0.0",
     "it-filter": "^2.0.0",
     "it-to-buffer": "^3.0.0",
