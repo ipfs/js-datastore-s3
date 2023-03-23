@@ -1,3 +1,5 @@
+# ⛔️ This module is now part of https://github.com/ipfs/js-stores
+
 # datastore-s3 <!-- omit in toc -->
 
 [![ipfs.tech](https://img.shields.io/badge/project-IPFS-blue.svg?style=flat-square)](https://ipfs.tech)
