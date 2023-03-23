@@ -1,3 +1,14 @@
+## [11.0.0](https://github.com/ipfs/js-datastore-s3/compare/v10.0.1...v11.0.0) (2023-03-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* this module is now ESM-only and uses the v3 @aws-sdk/s3-client
+
+### Features
+
+* convert to typescript and publish as ESM only ([#106](https://github.com/ipfs/js-datastore-s3/issues/106)) ([0f372e1](https://github.com/ipfs/js-datastore-s3/commit/0f372e180ae22d0c53eaeedcf3975007e1f12466))
+
 ## [10.0.1](https://github.com/ipfs/js-datastore-s3/compare/v10.0.0...v10.0.1) (2022-10-18)
 
 
