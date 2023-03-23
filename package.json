@@ -142,6 +142,7 @@
     "dep-check": "aegir dep-check"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.297.0",
     "datastore-core": "^9.0.4",
     "interface-datastore": "^8.1.2",
     "interface-store": "^5.0.1",
@@ -151,8 +152,8 @@
   },
   "devDependencies": {
     "aegir": "^38.1.7",
-    "aws-sdk": "^2.579.0",
     "interface-datastore-tests": "^5.0.0",
+    "p-defer": "^4.0.0",
     "sinon": "^15.0.2"
   }
 }

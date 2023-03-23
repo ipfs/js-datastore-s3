@@ -1,14 +1,35 @@
-import { Buffer } from 'buffer'
 import filter from 'it-filter'
 import { Key, KeyQuery, Pair, Query } from 'interface-datastore'
 import { BaseDatastore } from 'datastore-core/base'
 import * as Errors from 'datastore-core/errors'
 import { fromString as unint8arrayFromString } from 'uint8arrays'
 import toBuffer from 'it-to-buffer'
-import type S3 from 'aws-sdk/clients/s3'
+import type { S3 } from '@aws-sdk/client-s3'
 import type { AbortOptions } from 'interface-store'
+import {
+  PutObjectCommand,
+  CreateBucketCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command
+} from '@aws-sdk/client-s3'
 
 export interface S3DatastoreInit {
+  /**
+   * An optional path to use within the bucket for all files - this setting can
+   * affect S3 performance as it does internal sharding based on 'prefixes' -
+   * these can be delimited by '/' so it's often better  to wrap this datastore in
+   * a sharding datastore which will generate prefixed datastore keys for you.
+   *
+   * See - https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
+   * and https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-prefixes.html
+   */
+  path?: string
+
+  /**
+   * Whether to try to create the bucket if it is missing when `.open` is called
+   */
   createIfMissing?: boolean
 }
 
@@ -19,22 +40,25 @@ export interface S3DatastoreInit {
  * to the file system as is.
  */
 export class S3Datastore extends BaseDatastore {
-  public path: string
+  public path?: string
   public createIfMissing: boolean
   private readonly s3: S3
   private readonly bucket: string
 
-  constructor (path: string, s3: S3, init?: S3DatastoreInit) {
+  constructor (s3: S3, bucket: string, init?: S3DatastoreInit) {
     super()
 
-    this.path = path
-    this.s3 = s3
-
-    if (s3.config.params?.Bucket == null) {
-      throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
+    if (s3 == null) {
+      throw new Error('An S3 instance must be supplied. See the datastore-s3 README for examples.')
     }
 
-    this.bucket = s3.config.params.Bucket
+    if (bucket == null) {
+      throw new Error('An bucket must be supplied. See the datastore-s3 README for examples.')
+    }
+
+    this.path = init?.path
+    this.s3 = s3
+    this.bucket = bucket
     this.createIfMissing = init?.createIfMissing ?? false
   }
 
@@ -43,7 +67,7 @@ export class S3Datastore extends BaseDatastore {
    */
   _getFullKey (key: Key): string {
     // Avoid absolute paths with s3
-    return [this.path, key.toString()].join('/').replace(/\/\/+/g, '/')
+    return [this.path, key.toString()].filter(Boolean).join('/').replace(/\/\/+/g, '/')
   }
 
   /**
@@ -51,21 +75,16 @@ export class S3Datastore extends BaseDatastore {
    */
   async put (key: Key, val: Uint8Array): Promise<Key> {
     try {
-      await this.s3.upload({
-        Bucket: this.bucket,
-        Key: this._getFullKey(key),
-        Body: Buffer.from(val, val.byteOffset, val.byteLength)
-      }).promise()
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: this._getFullKey(key),
+          Body: val
+        })
+      )
 
       return key
     } catch (err: any) {
-      if (err.code === 'NoSuchBucket' && this.createIfMissing) {
-        await this.s3.createBucket({
-          Bucket: this.bucket
-        }).promise()
-        return await this.put(key, val)
-      }
-
       throw Errors.dbWriteFailedError(err)
     }
   }
@@ -75,10 +94,12 @@ export class S3Datastore extends BaseDatastore {
    */
   async get (key: Key): Promise<Uint8Array> {
     try {
-      const data = await this.s3.getObject({
-        Bucket: this.bucket,
-        Key: this._getFullKey(key)
-      }).promise()
+      const data = await this.s3.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: this._getFullKey(key)
+        })
+      )
 
       if (data.Body == null) {
         throw new Error('Response had no body')
@@ -114,15 +135,25 @@ export class S3Datastore extends BaseDatastore {
    */
   async has (key: Key): Promise<boolean> {
     try {
-      await this.s3.headObject({
-        Bucket: this.bucket,
-        Key: this._getFullKey(key)
-      }).promise()
+      await this.s3.send(
+        new HeadObjectCommand({
+          Bucket: this.bucket,
+          Key: this._getFullKey(key)
+        })
+      )
+
       return true
     } catch (err: any) {
-      if (err.code === 'NotFound') {
+      // doesn't exist and permission policy includes s3:ListBucket
+      if (err.$metadata?.httpStatusCode === 404) {
         return false
       }
+
+      // doesn't exist, permission policy does not include s3:ListBucket
+      if (err.$metadata?.httpStatusCode === 403) {
+        return false
+      }
+
       throw err
     }
   }
@@ -132,10 +163,12 @@ export class S3Datastore extends BaseDatastore {
    */
   async delete (key: Key): Promise<void> {
     try {
-      await this.s3.deleteObject({
-        Bucket: this.bucket,
-        Key: this._getFullKey(key)
-      }).promise()
+      await this.s3.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: this._getFullKey(key)
+        })
+      )
     } catch (err: any) {
       throw Errors.dbDeleteFailedError(err)
     }
@@ -146,10 +179,12 @@ export class S3Datastore extends BaseDatastore {
    */
   async * _listKeys (params: { Prefix?: string, StartAfter?: string }, options?: AbortOptions): AsyncIterable<Key> {
     try {
-      const data = await this.s3.listObjectsV2({
-        Bucket: this.bucket,
-        ...params
-      }).promise()
+      const data = await this.s3.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          ...params
+        })
+      )
 
       if (options?.signal?.aborted === true) {
         return
@@ -165,7 +200,7 @@ export class S3Datastore extends BaseDatastore {
         }
 
         // Remove the path from the key
-        yield new Key(d.Key.slice(this.path.length), false)
+        yield new Key(d.Key.slice((this.path ?? '').length), false)
       }
 
       // If we didn't get all records, recursively query
@@ -200,7 +235,7 @@ export class S3Datastore extends BaseDatastore {
   }
 
   async * _allKeys (q: KeyQuery, options?: AbortOptions): AsyncIterable<Key> {
-    const prefix = [this.path, q.prefix ?? ''].join('/').replace(/\/\/+/g, '/')
+    const prefix = [this.path, q.prefix ?? ''].filter(Boolean).join('/').replace(/\/\/+/g, '/')
 
     // Get all the keys via list object, recursively as needed
     let it = this._listKeys({
@@ -219,12 +254,23 @@ export class S3Datastore extends BaseDatastore {
    */
   async open (): Promise<void> {
     try {
-      await this.s3.headObject({
-        Bucket: this.bucket,
-        Key: this.path
-      }).promise()
+      await this.s3.send(
+        new HeadObjectCommand({
+          Bucket: this.bucket,
+          Key: this.path ?? ''
+        })
+      )
     } catch (err: any) {
       if (err.statusCode !== 404) {
+        if (this.createIfMissing) {
+          await this.s3.send(
+            new CreateBucketCommand({
+              Bucket: this.bucket
+            })
+          )
+          return
+        }
+
         throw Errors.dbOpenFailedError(err)
       }
     }
