@@ -142,9 +142,9 @@
     "dep-check": "aegir dep-check"
   },
   "dependencies": {
-    "buffer": "^6.0.3",
     "datastore-core": "^9.0.4",
     "interface-datastore": "^8.1.2",
+    "interface-store": "^5.0.1",
     "it-filter": "^2.0.0",
     "it-to-buffer": "^3.0.0",
     "uint8arrays": "^4.0.2"
