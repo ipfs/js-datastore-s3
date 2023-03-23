@@ -24,22 +24,6 @@
   },
   "type": "module",
   "types": "./dist/src/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "*",
-        "dist/*",
-        "dist/src/*",
-        "dist/src/*/index"
-      ],
-      "src/*": [
-        "*",
-        "dist/*",
-        "dist/src/*",
-        "dist/src/*/index"
-      ]
-    }
-  },
   "files": [
     "src",
     "dist",
@@ -158,17 +142,18 @@
     "dep-check": "aegir dep-check"
   },
   "dependencies": {
-    "buffer": "^6.0.3",
-    "datastore-core": "^8.0.1",
-    "interface-datastore": "^7.0.0",
+    "@aws-sdk/client-s3": "^3.297.0",
+    "datastore-core": "^9.0.4",
+    "interface-datastore": "^8.1.2",
+    "interface-store": "^5.0.1",
     "it-filter": "^2.0.0",
     "it-to-buffer": "^3.0.0",
     "uint8arrays": "^4.0.2"
   },
   "devDependencies": {
-    "aegir": "^37.5.1",
-    "aws-sdk": "^2.579.0",
-    "interface-datastore-tests": "^3.0.0",
-    "sinon": "^14.0.0"
+    "aegir": "^38.1.7",
+    "interface-datastore-tests": "^5.0.0",
+    "p-defer": "^4.0.0",
+    "sinon": "^15.0.2"
   }
 }
