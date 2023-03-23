@@ -9,8 +9,8 @@ async function main () {
   const s3 = new S3({
     region: 'region',
     credentials: {
-      accessKeyId: 'accessKeyId',
-      secretAccessKey: 'secretAccessKey'
+      accessKeyId: 'myaccesskey',
+      secretAccessKey: 'mysecretkey'
     }
   })
 
