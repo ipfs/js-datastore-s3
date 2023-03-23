@@ -1,18 +1,16 @@
 import { Buffer } from 'buffer'
 import filter from 'it-filter'
-import { Key } from 'interface-datastore'
+import { Key, KeyQuery, Pair, Query } from 'interface-datastore'
 import { BaseDatastore } from 'datastore-core/base'
 import * as Errors from 'datastore-core/errors'
 import { fromString as unint8arrayFromString } from 'uint8arrays'
 import toBuffer from 'it-to-buffer'
+import type S3 from 'aws-sdk/clients/s3'
+import type { AbortOptions } from 'interface-store'
 
-/**
- * @typedef {import('interface-datastore').Pair} Pair
- * @typedef {import('interface-datastore').Query} Query
- * @typedef {import('interface-datastore').KeyQuery} KeyQuery
- * @typedef {import('interface-datastore').Options} Options
- * @typedef {import('interface-datastore').Batch} Batch
- */
+export interface S3DatastoreInit {
+  createIfMissing?: boolean
+}
 
 /**
  * A datastore backed by the file system.
@@ -21,86 +19,68 @@ import toBuffer from 'it-to-buffer'
  * to the file system as is.
  */
 export class S3Datastore extends BaseDatastore {
-  /**
-   * @param {string} path
-   * @param {import('./types').S3DatastoreOptions} opts
-   */
-  constructor (path, opts) {
+  public path: string
+  public createIfMissing: boolean
+  private readonly s3: S3
+  private readonly bucket: string
+
+  constructor (path: string, s3: S3, init?: S3DatastoreInit) {
     super()
 
     this.path = path
-    this.opts = opts
-    const {
-      createIfMissing = false,
-      s3: {
-        config: {
-          params: {
-            Bucket
-          } = {}
-        } = {}
-      } = {}
-    } = opts
+    this.s3 = s3
 
-    if (typeof Bucket !== 'string') {
+    if (s3.config.params?.Bucket == null) {
       throw new Error('An S3 instance with a predefined Bucket must be supplied. See the datastore-s3 README for examples.')
     }
-    if (typeof createIfMissing !== 'boolean') {
-      throw new Error(`createIfMissing must be a boolean but was (${typeof createIfMissing}) ${createIfMissing}`)
-    }
-    this.bucket = Bucket
-    this.createIfMissing = createIfMissing
+
+    this.bucket = s3.config.params.Bucket
+    this.createIfMissing = init?.createIfMissing ?? false
   }
 
   /**
    * Returns the full key which includes the path to the ipfs store
-   *
-   * @param {Key} key
-   * @returns {string}
    */
-  _getFullKey (key) {
+  _getFullKey (key: Key): string {
     // Avoid absolute paths with s3
     return [this.path, key.toString()].join('/').replace(/\/\/+/g, '/')
   }
 
   /**
    * Store the given value under the key.
-   *
-   * @param {Key} key
-   * @param {Uint8Array} val
-   * @returns {Promise<void>}
    */
-  async put (key, val) {
+  async put (key: Key, val: Uint8Array): Promise<Key> {
     try {
-      await this.opts.s3.upload({
+      await this.s3.upload({
         Bucket: this.bucket,
         Key: this._getFullKey(key),
         Body: Buffer.from(val, val.byteOffset, val.byteLength)
       }).promise()
-    } catch (/** @type {any} */ err) {
+
+      return key
+    } catch (err: any) {
       if (err.code === 'NoSuchBucket' && this.createIfMissing) {
-        await this.opts.s3.createBucket({
+        await this.s3.createBucket({
           Bucket: this.bucket
         }).promise()
-        return this.put(key, val)
+        return await this.put(key, val)
       }
+
       throw Errors.dbWriteFailedError(err)
     }
   }
 
   /**
-   * Read from s3.
-   *
-   * @param {Key} key
-   * @returns {Promise<Uint8Array>}
+   * Read from s3
    */
-  async get (key) {
+  async get (key: Key): Promise<Uint8Array> {
     try {
-      const data = await this.opts.s3.getObject({
+      const data = await this.s3.getObject({
         Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
 
-      if (!data.Body) {
+      if (data.Body == null) {
         throw new Error('Response had no body')
       }
 
@@ -119,9 +99,9 @@ export class S3Datastore extends BaseDatastore {
         return new Uint8Array(buf, 0, buf.byteLength)
       }
 
-      // @ts-ignore s3 types define their own Blob as an empty interface
+      // @ts-expect-error s3 types define their own Blob as an empty interface
       return await toBuffer(data.Body)
-    } catch (/** @type {any} */ err) {
+    } catch (err: any) {
       if (err.statusCode === 404) {
         throw Errors.notFoundError(err)
       }
@@ -130,18 +110,16 @@ export class S3Datastore extends BaseDatastore {
   }
 
   /**
-   * Check for the existence of the given key.
-   *
-   * @param {Key} key
+   * Check for the existence of the given key
    */
-  async has (key) {
+  async has (key: Key): Promise<boolean> {
     try {
-      await this.opts.s3.headObject({
+      await this.s3.headObject({
         Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
       return true
-    } catch (/** @type {any} */ err) {
+    } catch (err: any) {
       if (err.code === 'NotFound') {
         return false
       }
@@ -150,70 +128,39 @@ export class S3Datastore extends BaseDatastore {
   }
 
   /**
-   * Delete the record under the given key.
-   *
-   * @param {Key} key
+   * Delete the record under the given key
    */
-  async delete (key) {
+  async delete (key: Key): Promise<void> {
     try {
-      await this.opts.s3.deleteObject({
+      await this.s3.deleteObject({
         Bucket: this.bucket,
         Key: this._getFullKey(key)
       }).promise()
-    } catch (/** @type {any} */ err) {
+    } catch (err: any) {
       throw Errors.dbDeleteFailedError(err)
     }
   }
 
   /**
-   * Create a new batch object.
-   *
-   * @returns {Batch}
-   */
-  batch () {
-    /** @type {({ key: Key, value: Uint8Array })[]} */
-    const puts = []
-    /** @type {Key[]} */
-    const deletes = []
-    return {
-      put (key, value) {
-        puts.push({ key: key, value: value })
-      },
-      delete (key) {
-        deletes.push(key)
-      },
-      commit: async () => {
-        const putOps = puts.map((p) => this.put(p.key, p.value))
-        const delOps = deletes.map((key) => this.delete(key))
-        await Promise.all(putOps.concat(delOps))
-      }
-    }
-  }
-
-  /**
    * Recursively fetches all keys from s3
-   *
-   * @param {{ Prefix?: string, StartAfter?: string }} params
-   * @param {Options} [options]
-   * @returns {AsyncGenerator<Key, void, undefined>}
    */
-  async * _listKeys (params, options) {
+  async * _listKeys (params: { Prefix?: string, StartAfter?: string }, options?: AbortOptions): AsyncIterable<Key> {
     try {
-      const data = await this.opts.s3.listObjectsV2({
+      const data = await this.s3.listObjectsV2({
         Bucket: this.bucket,
         ...params
       }).promise()
 
-      if (options && options.signal && options.signal.aborted) {
+      if (options?.signal?.aborted === true) {
         return
       }
 
-      if (!data || !data.Contents) {
+      if (data == null || data.Contents == null) {
         throw new Error('Not found')
       }
 
       for (const d of data.Contents) {
-        if (!d.Key) {
+        if (d.Key == null) {
           throw new Error('Not found')
         }
 
@@ -222,33 +169,28 @@ export class S3Datastore extends BaseDatastore {
       }
 
       // If we didn't get all records, recursively query
-      if (data.IsTruncated) {
+      if (data.IsTruncated === true) {
         // If NextMarker is absent, use the key from the last result
         params.StartAfter = data.Contents[data.Contents.length - 1].Key
 
         // recursively fetch keys
         yield * this._listKeys(params)
       }
-    } catch (/** @type {any} */ err) {
+    } catch (err: any) {
       throw new Error(err.code)
     }
   }
 
-  /**
-   * @param {Query} q
-   * @param {Options} [options]
-   */
-  async * _all (q, options) {
+  async * _all (q: Query, options?: AbortOptions): AsyncIterable<Pair> {
     for await (const key of this._allKeys({ prefix: q.prefix }, options)) {
       try {
-        /** @type {Pair} */
-        const res = {
+        const res: Pair = {
           key,
           value: await this.get(key)
         }
 
         yield res
-      } catch (/** @type {any} */ err) {
+      } catch (err: any) {
         // key was deleted while we are iterating over the results
         if (err.statusCode !== 404) {
           throw err
@@ -257,13 +199,8 @@ export class S3Datastore extends BaseDatastore {
     }
   }
 
-  /**
-   * @param {KeyQuery} q
-   * @param {Options} [options]
-   * @returns {AsyncGenerator<Key, void, undefined>}
-   */
-  async * _allKeys (q, options) {
-    const prefix = [this.path, q.prefix || ''].join('/').replace(/\/\/+/g, '/')
+  async * _allKeys (q: KeyQuery, options?: AbortOptions): AsyncIterable<Key> {
+    const prefix = [this.path, q.prefix ?? ''].join('/').replace(/\/\/+/g, '/')
 
     // Get all the keys via list object, recursively as needed
     let it = this._listKeys({
@@ -271,7 +208,7 @@ export class S3Datastore extends BaseDatastore {
     }, options)
 
     if (q.prefix != null) {
-      it = filter(it, k => k.toString().startsWith(`${q.prefix || ''}`))
+      it = filter(it, k => k.toString().startsWith(`${q.prefix ?? ''}`))
     }
 
     yield * it
@@ -280,18 +217,16 @@ export class S3Datastore extends BaseDatastore {
   /**
    * This will check the s3 bucket to ensure access and existence
    */
-  async open () {
+  async open (): Promise<void> {
     try {
-      await this.opts.s3.headObject({
+      await this.s3.headObject({
         Bucket: this.bucket,
         Key: this.path
       }).promise()
-    } catch (/** @type {any} */ err) {
+    } catch (err: any) {
       if (err.statusCode !== 404) {
         throw Errors.dbOpenFailedError(err)
       }
     }
   }
-
-  async close () {}
 }

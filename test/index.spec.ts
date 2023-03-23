@@ -15,55 +15,58 @@ describe('S3Datastore', () => {
     it('requires a bucket', () => {
       const s3 = new S3({ params: { Bucket: null } })
       expect(
-        () => new S3Datastore('.ipfs/datastore', { s3 })
+        () => new S3Datastore('.ipfs/datastore', s3)
       ).to.throw()
     })
     it('createIfMissing defaults to false', () => {
       const s3 = new S3({ params: { Bucket: 'test' } })
-      const store = new S3Datastore('.ipfs', { s3 })
+      const store = new S3Datastore('.ipfs', s3)
       expect(store.createIfMissing).to.equal(false)
     })
     it('createIfMissing can be set to true', () => {
       const s3 = new S3({ params: { Bucket: 'test' } })
-      const store = new S3Datastore('.ipfs', { s3, createIfMissing: true })
+      const store = new S3Datastore('.ipfs', s3, { createIfMissing: true })
       expect(store.createIfMissing).to.equal(true)
     })
   })
 
   describe('put', () => {
-    it('should include the path in the key', () => {
+    it('should include the path in the key', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'upload', (params) => {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         return s3Resolve(null)
       })
 
-      return store.put(new Key('/z/key'), Buffer.from('test data'))
+      return await store.put(new Key('/z/key'), Buffer.from('test data'))
     })
 
-    it('should turn Uint8Arrays into Buffers', () => {
+    it('should turn Uint8Arrays into Buffers', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'upload', (params) => {
         expect(Buffer.isBuffer(params.Body)).to.be.true()
         return s3Resolve(null)
       })
 
-      return store.put(new Key('/z/key'), new TextEncoder().encode('test data'))
+      return await store.put(new Key('/z/key'), new TextEncoder().encode('test data'))
     })
 
-    it('should create the bucket when missing if createIfMissing is true', () => {
+    it('should create the bucket when missing if createIfMissing is true', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3, createIfMissing: true })
+      const store = new S3Datastore('.ipfs/datastore', s3, { createIfMissing: true })
 
       // 1. On the first call upload will fail with a NoSuchBucket error
       // 2. This should result in the `createBucket` standin being called
       // 3. upload is then called a second time and it passes
 
       let bucketCreated = false
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'upload', (params) => {
         if (!bucketCreated) {
           return s3Reject(new S3Error('NoSuchBucket'))
@@ -71,19 +74,21 @@ describe('S3Datastore', () => {
         return s3Resolve(null)
       })
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'createBucket', (params) => {
         bucketCreated = true
         return s3Resolve()
       })
 
-      return store.put(new Key('/z/key'), Buffer.from('test data'))
+      return await store.put(new Key('/z/key'), Buffer.from('test data'))
     })
 
     it('should not create the bucket when missing if createIfMissing is false', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3, createIfMissing: false })
+      const store = new S3Datastore('.ipfs/datastore', s3, { createIfMissing: false })
 
       let bucketCreated = false
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'upload', (params) => {
         if (!bucketCreated) {
           return s3Reject(new S3Error('NoSuchBucket'))
@@ -91,6 +96,7 @@ describe('S3Datastore', () => {
         return s3Resolve(null)
       })
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'createBucket', (params) => {
         bucketCreated = true
         return s3Resolve()
@@ -98,7 +104,7 @@ describe('S3Datastore', () => {
 
       try {
         await store.put(new Key('/z/key'), Buffer.from('test data'))
-      } catch (/** @type {any} */ err) {
+      } catch (err: any) {
         expect(bucketCreated).to.equal(false)
         expect(err).to.have.property('code', 'ERR_DB_WRITE_FAILED')
       }
@@ -106,8 +112,9 @@ describe('S3Datastore', () => {
 
     it('should return a standard error when the put fails', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'upload', (params) => {
         expect(params.Key).to.equal('.ipfs/datastore/z/key')
         return s3Reject(new Error('bad things happened'))
@@ -115,29 +122,31 @@ describe('S3Datastore', () => {
 
       try {
         await store.put(new Key('/z/key'), Buffer.from('test data'))
-      } catch (/** @type {any} */ err) {
+      } catch (err: any) {
         expect(err.code).to.equal('ERR_DB_WRITE_FAILED')
       }
     })
   })
 
   describe('get', () => {
-    it('should include the path in the fetch key', () => {
+    it('should include the path in the fetch key', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'getObject', (params) => {
         expect(params).to.have.property('Key', '.ipfs/datastore/z/key')
         return s3Resolve({ Body: Buffer.from('test') })
       })
 
-      return store.get(new Key('/z/key'))
+      return await store.get(new Key('/z/key'))
     })
 
     it('should return a standard not found error code if the key isn\'t found', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'getObject', (params) => {
         expect(params).to.have.property('Key', '.ipfs/datastore/z/key')
         return s3Reject(new S3Error('NotFound', 404))
@@ -145,7 +154,7 @@ describe('S3Datastore', () => {
 
       try {
         await store.get(new Key('/z/key'))
-      } catch (/** @type {any} */ err) {
+      } catch (err: any) {
         expect(err.code).to.equal('ERR_NOT_FOUND')
       }
     })
@@ -154,8 +163,9 @@ describe('S3Datastore', () => {
   describe('delete', () => {
     it('should return a standard delete error if deletion fails', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'deleteObject', (params) => {
         expect(params).to.have.property('Key', '.ipfs/datastore/z/key')
         return s3Reject(new Error('bad things'))
@@ -163,7 +173,7 @@ describe('S3Datastore', () => {
 
       try {
         await store.delete(new Key('/z/key'))
-      } catch (/** @type {any} */ err) {
+      } catch (err: any) {
         expect(err.code).to.equal('ERR_DB_DELETE_FAILED')
       }
     })
@@ -172,15 +182,16 @@ describe('S3Datastore', () => {
   describe('open', () => {
     it('should return a standard open error if the head request fails with an unknown error', async () => {
       const s3 = new S3({ params: { Bucket: 'my-ipfs-bucket' } })
-      const store = new S3Datastore('.ipfs/datastore', { s3 })
+      const store = new S3Datastore('.ipfs/datastore', s3)
 
+      // @ts-expect-error incorrect types
       sinon.replace(s3, 'headObject', (_) => {
         return s3Reject(new Error('unknown'))
       })
 
       try {
         await store.open()
-      } catch (/** @type {any} */ err) {
+      } catch (err: any) {
         expect(err.code).to.equal('ERR_DB_OPEN_FAILED')
       }
     })
@@ -193,7 +204,7 @@ describe('S3Datastore', () => {
           params: { Bucket: 'my-ipfs-bucket' }
         })
         s3Mock(s3)
-        return new S3Datastore('.ipfs/datastore', { s3 })
+        return new S3Datastore('.ipfs/datastore', s3)
       },
       teardown () {
       }
