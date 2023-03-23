@@ -1,50 +1,40 @@
-import IPFS from 'ipfs-core'
+import { createHelia } from 'helia'
+import { unixfs } from '@helia/unixfs'
 import toBuffer from 'it-to-buffer'
-import { createS3Repo } from './create-s3-repo'
-import S3 from 'aws-sdk/clients/s3.js'
-import { S3Lock } from './s3-lock'
+import { S3 } from '@aws-sdk/client-s3'
+import { DatastoreS3 } from 'datastore-s3'
 
 async function main () {
   // Configure S3 as normal
   const s3 = new S3({
-    params: {
-      Bucket: 'my-bucket'
-    },
-    accessKeyId: 'myaccesskey',
-    secretAccessKey: 'mysecretkey'
+    region: 'region',
+    credentials: {
+      accessKeyId: 'accessKeyId',
+      secretAccessKey: 'secretAccessKey'
+    }
   })
 
-  // Prevents concurrent access to the repo, you can also use the memory or fs locks
-  // bundled with ipfs-repo though they will not prevent processes running on two
-  // machines accessing the same repo in parallel
-  const repoLock = new S3Lock(s3)
+  const datastore = new DatastoreS3(s3, 'my-bucket')
 
-  // Create the repo
-  const s3Repo = createS3Repo('/', s3, repoLock)
-
-  // Create a new IPFS node with our S3 backed Repo
-  console.log('Start ipfs')
-  const node = await IPFS.create({
-    repo: s3Repo
+  // Create a new Helia node with our S3 backed Repo
+  console.log('Start Helia')
+  const node = await createHelia({
+    datastore
   })
 
   // Test out the repo by sending and fetching some data
-  console.log('IPFS is ready')
+  console.log('Helia is ready')
 
   try {
-    const version = await node.version()
-    console.log('Version:', version.version)
+    const fs = unixfs(helia)
 
-    // Once we have the version, let's add a file to IPFS
-    const { path, cid } = await node.add({
-      path: 'data.txt',
-      content: Buffer.from(require('crypto').randomBytes(1024 * 25))
-    })
+    // Let's add a file to Helia
+    const cid = await fs.addBytes(Uint8Array.from([0, 1, 2, 3]))
 
-    console.log('\nAdded file:', path, cid)
+    console.log('\nAdded file:', cid)
 
     // Log out the added files metadata and cat the file from IPFS
-    const data = await toBuffer(node.cat(cid))
+    const data = await toBuffer(fs.cat(cid))
 
     // Print out the files contents to console
     console.log(`\nFetched file content containing ${data.byteLength} bytes`)
